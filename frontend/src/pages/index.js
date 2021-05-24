@@ -1,8 +1,8 @@
-import React from 'react';
-
+import React, {memo} from 'react';
+import Moment from 'react-moment';
 import Layout from '../components/layout';
 
-import { Button, Tabs, Container, Section, Level, Form, Columns, Content } from 'react-bulma-components';
+import { Button, ButtonGroup, Tabs, Container, Section, Level, Form, Columns, Content, Heading, Box } from 'react-bulma-components';
 
 const api = 'https://y2dgwjj82j.execute-api.us-east-1.amazonaws.com/dev'
 
@@ -11,8 +11,15 @@ class HttpSigForm extends React.Component {
     super(props);
     this.state = {
       httpMsg: '',
-      coveredContent: ['@request-target', 'Header1', 'Header2'],
-      requestTarget: ''
+      availableContent: [],
+      coveredContent: [],
+      requestTarget: '',
+      signatureInput: '',
+      algParam: '',
+      alg: '',
+      keyid: undefined,
+      created: undefined,
+      expires: undefined
     };
   }
   
@@ -22,6 +29,32 @@ class HttpSigForm extends React.Component {
     });
   }
   
+  loadExampleRequest = (e) => {
+    this.setState({
+      httpMsg: `POST /foo?param=value&pet=dog HTTP/1.1
+Host: example.com
+Date: Tue, 20 Apr 2021 02:07:55 GMT
+Content-Type: application/json
+Digest: SHA-256=X48E9qOokqqrvdts8nOJRJN3OWDUoyWxBf7kbu9DBPE=
+Content-Length: 18
+
+{"hello": "world"}`
+    });
+  }
+
+  loadExampleResponse = (e) => {
+    this.setState({
+      httpMsg: `HTTP/1.1 200 OK
+Date: Tue, 20 Apr 2021 02:07:56 GMT
+Content-Type: application/json
+Digest: SHA-256=X48E9qOokqqrvdts8nOJRJN3OWDUoyWxBf7kbu9DBPE=
+Content-Length: 18
+
+{"hello": "world"}`
+    });
+  }
+
+  
   parseHttpMsg = (e) => {
     e.preventDefault();
     fetch(api + '/parse', {
@@ -30,76 +63,225 @@ class HttpSigForm extends React.Component {
     }).then(response => {
       return response.json()
     }).then(data => {
-      var coveredContent = data['headers'];
-      if (data['request-target']) {
-        coveredContent.push('@request-target');
+      var availableContent = data['headers'];
+      if (data['request']) {
+        availableContent.unshift('@request-target');
+      }
+      if (data['response']) {
+        availableContent.unshift('@status-code');
       }
       this.setState({
-        coveredContent: coveredContent,
+        availableContent: availableContent,
+        coveredContent: [],
         requestTarget: data['request-target']
       });
     });
   }
   
+  generateSignatureInput = (e) => {
+    e.preventDefault();
+    
+    var data = {
+      msg: this.state.httpMsg,
+      covered: this.state.coveredContent
+    }
+    
+    fetch(api + '/input', {
+      method: 'POST',
+      body: JSON.stringify(data),
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    }).then(response => {
+      return response.json();
+    }).then(data => {
+      this.setState({
+        signatureInput: data['signature-input']
+      });
+    });
+  }
+
+  setCoveredContent = (value) => (e) => {
+    //e.preventDefault();
+    var covered = new Set(this.state.coveredContent);
+    if (covered.has(value)) {
+      covered.delete(value);
+    } else {
+      covered.add(value);
+    }
+    this.setState({
+      coveredContent: [...covered]
+    });
+  }
+  
+  setAlgParam = (e) => {
+    this.setState({
+      algParam: e.target.value
+    });
+  }
+  
+  setAlg = (e) => {
+    this.setState({
+      alg: e.target.value
+    });
+  }
+  
+  setKeyid = (e) => {
+    this.setState({
+      keyid: e.target.value
+    });
+  }
+  
+  setCreated = (e) => {
+    if (!e.target.value) {
+      this.setState({
+        created: undefined
+      });
+    } else {
+      var i = parseInt(e.target.value);
+      if (Number.isInteger(i)) {
+        this.setState({
+          created: i
+        });
+      }
+    }
+  }
+  
+  setExpires = (e) => {
+    if (!e.target.value) {
+      this.setState({
+        expires: undefined
+      });
+    } else {
+      var i = parseInt(e.target.value);
+      if (Number.isInteger(i)) {
+        this.setState({
+          expires: i
+        });
+      }
+    }
+  }
+
+  
   render = () => {
     return (
       <>
-      <Section>
-    		<Form.Label>HTTP Message</Form.Label>
-    		<Form.Field>
-    			<Form.Control>
-		        <Form.Textarea rows={10} spellCheck={false} onChange={this.setHttpMsg} value={this.state.httpMsg} />
+      <Box>
+        <Heading>Input</Heading>
+        <Section>
+      		<Form.Label>HTTP Message</Form.Label>
+      		<Form.Field>
+      			<Form.Control>
+  		        <Form.Textarea rows={10} spellCheck={false} onChange={this.setHttpMsg} value={this.state.httpMsg} />
+      			</Form.Control>
+      		</Form.Field>
             <Button onClick={this.parseHttpMsg}>Parse</Button>
-    			</Form.Control>
-    		</Form.Field>
-      </Section>
-      <CoveredContent coveredContent={this.state.coveredContent} />
-      <Section>
-    		<Form.Label>Signature Base String</Form.Label>
-    		<Form.Field>
-    			<Form.Control>
-		        <Form.Textarea rows={10} spellCheck={false} />
-    			</Form.Control>
-    		</Form.Field>
-      </Section>
-      <Section>
-    		<Form.Label>Key material</Form.Label>
-    		<Form.Field>
-    			<Form.Control>
-		        <Form.Textarea rows={10} spellCheck={false} />
-    			</Form.Control>
-    		</Form.Field>
-      </Section>
-      <Section>
-    		<Form.Field>
-    			<Form.Label>Signature algorithm</Form.Label>
-    			<Form.Control>
-    				<Form.Select>
-              <option value="jose">Use JWA value from Key</option>
-              <option value="rsa-pss">RSA PSS</option>
-              <option value="ec">EC</option>
-              <option value="hmac">HMAC</option>
-              <option value="rsa">RSA 1.5</option>
-    				</Form.Select>
-    			</Form.Control>
-    		</Form.Field>
-      </Section>
-      <Section>
-    		<Form.Label>Signature Value</Form.Label>
-    		<Form.Field>
-    			<Form.Control>
-		        <Form.Textarea rows={10} spellCheck={false} />
-    			</Form.Control>
-    		</Form.Field>
-      </Section>
-      <Section>
-    		<Form.Label>Signed HTTP Message</Form.Label>
-    		<Form.Field>
-    			<Form.Control>
-		        <Form.Textarea rows={10} spellCheck={false} />
-    			</Form.Control>
-    		</Form.Field>
-      </Section>
+            <Button onClick={this.loadExampleRequest}>Example Request</Button>
+            <Button onClick={this.loadExampleResponse}>Example Response</Button>
+        </Section>
+      </Box>
+      <Box>
+        <Heading>Signature Parameters</Heading>
+        <Section>
+          <CoveredContent coveredContent={this.state.coveredContent} availableContent={this.state.availableContent} setCoveredContent={this.setCoveredContent} />
+          <Form.Field>
+            <Form.Label>Explicit Signature Algorithm</Form.Label>
+            <Form.Control>
+      				<Form.Select onChange={this.setAlgParam} value={this.state.algParam}>
+                <option value="">Not Speficied</option>
+                <option value="rsa-pss">RSA PSS</option>
+                <option value="ec">EC</option>
+                <option value="hmac">HMAC</option>
+                <option value="rsa">RSA 1.5</option>
+      				</Form.Select>
+            </Form.Control>
+          </Form.Field>
+          <Form.Field>
+            <Form.Label>Key ID</Form.Label>
+            <Form.Control>
+      				<Form.Input onChange={this.setKeyid} value={this.state.keyid ? this.state.keyid : ''} />
+            </Form.Control>
+          </Form.Field>
+          <Form.Label>Creation Time</Form.Label>
+          <Form.Field kind="addons">
+            <Form.Control>
+      				<Form.Input onChange={this.setCreated} value={this.state.created ? String(this.state.created) : ''} />
+            </Form.Control>
+            <Form.Control>
+              <Button isStatic>
+              {this.state.created && (
+                <Moment>{this.state.created * 1000}</Moment>
+              )}
+              </Button>
+            </Form.Control>
+          </Form.Field>
+          <Form.Label>Expiration Time</Form.Label>
+          <Form.Field kind="addons">
+            <Form.Control>
+      				<Form.Input onChange={this.setExpires} value={this.state.expires ? String(this.state.expires) : ''} />
+            </Form.Control>
+            <Form.Control>
+              <Button isStatic>
+              {this.state.expires && (
+                <Moment>{this.state.expires * 1000}</Moment>
+              )}
+              </Button>
+            </Form.Control>
+          </Form.Field>
+        </Section>
+        <Section>
+      		<Form.Label>Signature Base String</Form.Label>
+      		<Form.Field>
+      			<Form.Control>
+  		        <Form.Textarea rows={10} spellCheck={false} />
+      			</Form.Control>
+      		</Form.Field>
+        </Section>
+      </Box>
+      <Box>
+        <Heading>Signature Material</Heading>
+        <Section>
+      		<Form.Label>Key material</Form.Label>
+      		<Form.Field>
+      			<Form.Control>
+  		        <Form.Textarea rows={10} spellCheck={false} />
+      			</Form.Control>
+      		</Form.Field>
+        </Section>
+        <Section>
+      		<Form.Field>
+      			<Form.Label>Signature Algorithm</Form.Label>
+      			<Form.Control>
+              <Form.Select onChange={this.setAlg} disabled={this.state.algParam !== ''} value={this.state.algParam ? this.state.algParam : this.state.alg}>
+                <option value="jose">Use JWA value from Key</option>
+                <option value="rsa-pss">RSA PSS</option>
+                <option value="ec">EC</option>
+                <option value="hmac">HMAC</option>
+                <option value="rsa">RSA 1.5</option>
+      				</Form.Select>
+      			</Form.Control>
+      		</Form.Field>
+        </Section>
+      </Box>
+      <Box>
+        <Heading>Output</Heading>
+        <Section>
+      		<Form.Label>Signature Value</Form.Label>
+      		<Form.Field>
+      			<Form.Control>
+  		        <Form.Textarea rows={10} spellCheck={false} />
+      			</Form.Control>
+      		</Form.Field>
+        </Section>
+        <Section>
+      		<Form.Label>Signed HTTP Message</Form.Label>
+      		<Form.Field>
+      			<Form.Control>
+  		        <Form.Textarea rows={10} spellCheck={false} />
+      			</Form.Control>
+      		</Form.Field>
+        </Section>
+      </Box>
       </>
     );
   }
@@ -107,19 +289,21 @@ class HttpSigForm extends React.Component {
 }
 
 const CoveredContent = ({...props}) =>
-      <Section>
-    		<Form.Label>Covered content</Form.Label>
+(
+      <>
+        <Form.Label>Covered content</Form.Label>
     		<Form.Field kind='group'>
     			<Form.Control>
-  {props.coveredContent.map((value, index) => (
-		        <Form.Checkbox>
-              <code>{value}</code>
-            </Form.Checkbox>
+  {props.availableContent.map((value, index) => (
+            <label>
+              <input type="checkbox" checked={props.coveredContent.includes(value)} onClick={props.setCoveredContent(value)} />
+              <code>{value}{props.coveredContent.includes(value)}</code>
+            </label>
   ))}
     			</Form.Control>
     		</Form.Field>
-      </Section>
-;
+      </>
+);
 
 
 const IndexPage = () => <Layout>

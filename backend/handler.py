@@ -55,17 +55,32 @@ def parse(event, context):
     
     headers = [h.lower() for h in p.get_headers()]
     
-    # this is request-only for now
-    requestTaret = p.get_method().lower() + ' ' + p.get_path() + '?' + p.get_query_string()
-    
+    response = {
+        'headers': headers
+    }
+
+    if p.get_status_code():
+        # response
+        response['response'] = {
+            'status-code': p.get_status_code()
+        }
+    else:
+        # this is request-only for now
+        requestTarget = p.get_method().lower() + ' ' + p.get_path()
+        if p.get_query_string():
+            requestTarget += '?' + p.get_query_string()
+        
+        response['request'] = {
+            'request-target': requestTarget,
+            'method': p.get_method().upper(),
+            'path': p.get_path(),
+            'query': p.get_query_string()
+        }
         
     return {
         'statusCode': 200,
         'headers': {
             "Access-Control-Allow-Origin": "*"
         },
-        'body': json.dumps({
-            'headers': headers,
-            'request-target': requestTaret
-        })
+        'body': json.dumps(response)
     }
