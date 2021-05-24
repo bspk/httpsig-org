@@ -9,28 +9,6 @@ import M2Crypto
 import hashlib
 
 
-def hello(event, context):
-    body = {
-        "message": "Go Serverless v1.0! Your function executed successfully!",
-        "input": event
-    }
-
-    response = {
-        "statusCode": 200,
-        "body": json.dumps(body)
-    }
-
-    return response
-
-    # Use this code if you don't use the http event with the LAMBDA-PROXY
-    # integration
-    """
-    return {
-        "message": "Go Serverless v1.0! Your function executed successfully!",
-        "event": event
-    }
-    """
-
 def cors(event, controller):
     return {
         'statusCode': 200,
@@ -84,3 +62,87 @@ def parse(event, context):
         },
         'body': json.dumps(response)
     }
+    
+def input(event, context):
+    if not event['body']:
+        return {
+            'statusCode': 400,
+            'headers': {
+                "Access-Control-Allow-Origin": "*"
+            }
+        }
+    
+    data = json.loads(event['body'])
+    
+    msg = data['msg'].encode('utf-8')
+    p = HttpParser()
+    p.execute(msg, len(msg))
+    
+    sigparams = http_sfv.InnerList()
+    base = '';
+    for c in data['coveredContent']:
+        if c == '@request-target':
+            i = http_sfv.Item(c)
+            sigparams.append(i)
+            base += str(i)
+            base += ': '
+            requestTarget = p.get_method().lower() + ' ' + p.get_path()
+            if p.get_query_string():
+                requestTarget += '?' + p.get_query_string()
+            base += requestTarget
+            base += "\n"
+        elif c == '@status-code':
+            i = http_sfv.Item(c)
+            sigparams.append(i)
+            base += str(i)
+            base += ': '
+            base += str(p.get_status_code())
+            base += "\n"
+        elif not c.startswith('@'):
+            i = http_sfv.Item(c.lower())
+            sigparams.append(i)
+            base += str(i)
+            base += ': '
+            base += p.get_headers()[c].strip() # TODO: normalize headers better
+            base += "\n"
+        else:
+            print('Bad content identifier: ' + c)
+            return {
+                'statusCode': 400,
+                'headers': {
+                    "Access-Control-Allow-Origin": "*"
+                },
+            }
+
+    if 'created' in data:
+        sigparams.params['created'] = data['created']
+    
+    if 'expires' in data:
+        sigparams.params['expires'] = data['expires']
+    
+    if 'keyid' in data:
+        sigparams.params['keyid'] = data['keyid']
+    
+    if 'alg' in data:
+        sigparams.params['alg'] = data['alg']
+
+    sigparamstr = ''
+    sigparamstr += str(http_sfv.Item("@signature-params"))
+    sigparamstr += ": "
+    sigparamstr += str(sigparams)
+    
+    base += sigparamstr
+    
+    response = {
+        'signature-input': base,
+        'signature-params': str(sigparams)
+    }
+    
+    return {
+        'statusCode': 200,
+        'headers': {
+            "Access-Control-Allow-Origin": "*"
+        },
+        'body': json.dumps(response)
+    }
+    

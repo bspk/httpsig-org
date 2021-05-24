@@ -19,7 +19,9 @@ class HttpSigForm extends React.Component {
       alg: '',
       keyid: undefined,
       created: undefined,
-      expires: undefined
+      expires: undefined,
+      signatureInput: undefined,
+      signatureParams: undefined
     };
   }
   
@@ -78,29 +80,6 @@ Content-Length: 18
     });
   }
   
-  generateSignatureInput = (e) => {
-    e.preventDefault();
-    
-    var data = {
-      msg: this.state.httpMsg,
-      covered: this.state.coveredContent
-    }
-    
-    fetch(api + '/input', {
-      method: 'POST',
-      body: JSON.stringify(data),
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    }).then(response => {
-      return response.json();
-    }).then(data => {
-      this.setState({
-        signatureInput: data['signature-input']
-      });
-    });
-  }
-
   setCoveredContent = (value) => (e) => {
     //e.preventDefault();
     var covered = new Set(this.state.coveredContent);
@@ -161,7 +140,40 @@ Content-Length: 18
       }
     }
   }
+  
+  generateSignatureInput = (e) => {
+    e.preventDefault();
+    
+    var body = {
+      msg: this.state.httpMsg,
+      coveredContent: this.state.coveredContent,
+      alg: this.state.algParam ? this.state.algParam : undefined,
+      keyid: this.state.keyid,
+      created: this.state.created,
+      expires: this.state.expires
+    };
+    
+    fetch(api + '/input', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(body)
+    }).then(response => {
+      return response.json()
+    }).then(data => {
+      this.setState({
+        signatureInput: data['signature-input'],
+        signatureParams: data['signature-params']
+      });
+    });
+  }
+  
+  setSignatureInput = (e) => {
+    this.setState({
+      signatureInput: e.target.value
+    });
+  }
 
+  
   
   render = () => {
     return (
@@ -228,18 +240,19 @@ Content-Length: 18
               </Button>
             </Form.Control>
           </Form.Field>
-        </Section>
-        <Section>
-      		<Form.Label>Signature Base String</Form.Label>
-      		<Form.Field>
-      			<Form.Control>
-  		        <Form.Textarea rows={10} spellCheck={false} />
-      			</Form.Control>
-      		</Form.Field>
+          <Button onClick={this.generateSignatureInput}>Generate Signature Input</Button>
         </Section>
       </Box>
       <Box>
         <Heading>Signature Material</Heading>
+        <Section>
+      		<Form.Label>Signature Input String</Form.Label>
+      		<Form.Field>
+      			<Form.Control>
+  		        <Form.Textarea rows={10} spellCheck={false} onChange={this.setSignatureInput} value={this.state.signatureInput ? this.state.signatureInput : ''} />
+      			</Form.Control>
+      		</Form.Field>
+        </Section>
         <Section>
       		<Form.Label>Key material</Form.Label>
       		<Form.Field>
