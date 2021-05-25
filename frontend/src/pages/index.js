@@ -1,8 +1,10 @@
 import React, {memo} from 'react';
 import Moment from 'react-moment';
 import Layout from '../components/layout';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faClock, faPlusSquare, faTrash } from '@fortawesome/fontawesome-free-solid';
 
-import { Button, ButtonGroup, Tabs, Container, Section, Level, Form, Columns, Content, Heading, Box } from 'react-bulma-components';
+import { Button, ButtonGroup, Tabs, Container, Section, Level, Form, Columns, Content, Heading, Box, Icon } from 'react-bulma-components';
 
 const api = 'https://y2dgwjj82j.execute-api.us-east-1.amazonaws.com/dev'
 
@@ -126,6 +128,19 @@ Content-Length: 18
     }
   }
   
+  setCreatedToNow = (e) => {
+    var now = Math.floor(Date.now() / 1000);
+    this.setState({
+      created: now
+    });
+  }
+  
+  clearCreated = (e) => {
+    this.setState({
+      created: undefined
+    });
+  }
+  
   setExpires = (e) => {
     if (!e.target.value) {
       this.setState({
@@ -139,6 +154,37 @@ Content-Length: 18
         });
       }
     }
+  }
+  
+  addTimeToExpires = (e) => {
+    if (!this.state.expires) {
+      // expiration isn't set
+      if (this.state.created) {
+        // creation is set, expires 5 min from creation
+        var expires = this.state.created + 5 * 60;
+        this.setState({
+          expires: expires
+        });
+      } else {
+        // creation isn't set, expires 5 min from now
+        var expires = Math.floor(Date.now() / 1000) + 5 * 60;
+        this.setState({
+          expires: expires
+        });
+      }
+    } else {
+      // expiration is set, add 5 min
+      var expires = this.state.expires + 5 * 60;
+      this.setState({
+        expires: expires
+      });
+    }
+  }
+  
+  clearExpires = (e) => {
+    this.setState({
+      expires: undefined
+    });
   }
   
   generateSignatureInput = (e) => {
@@ -182,14 +228,14 @@ Content-Length: 18
         <Heading>Input</Heading>
         <Section>
       		<Form.Label>HTTP Message</Form.Label>
+          <Button onClick={this.loadExampleRequest}>Example Request</Button>
+          <Button onClick={this.loadExampleResponse}>Example Response</Button>
       		<Form.Field>
       			<Form.Control>
   		        <Form.Textarea rows={10} spellCheck={false} onChange={this.setHttpMsg} value={this.state.httpMsg} />
       			</Form.Control>
       		</Form.Field>
             <Button onClick={this.parseHttpMsg}>Parse</Button>
-            <Button onClick={this.loadExampleRequest}>Example Request</Button>
-            <Button onClick={this.loadExampleResponse}>Example Response</Button>
         </Section>
       </Box>
       <Box>
@@ -201,10 +247,10 @@ Content-Length: 18
             <Form.Control>
       				<Form.Select onChange={this.setAlgParam} value={this.state.algParam}>
                 <option value="">Not Speficied</option>
-                <option value="rsa-pss">RSA PSS</option>
-                <option value="ec">EC</option>
-                <option value="hmac">HMAC</option>
-                <option value="rsa">RSA 1.5</option>
+                <option value="rsa-pss-sha512">RSA PSS</option>
+                <option value="ecdsa-p256-sha256">EC</option>
+                <option value="hmac-sha256">HMAC</option>
+                <option value="rsa-v1_5-sha256">RSA 1.5</option>
       				</Form.Select>
             </Form.Control>
           </Form.Field>
@@ -218,12 +264,24 @@ Content-Length: 18
           <Form.Field kind="addons">
             <Form.Control>
       				<Form.Input onChange={this.setCreated} value={this.state.created ? String(this.state.created) : ''} />
+              {this.state.created && (
+                <Form.Help>
+                  <Moment>{this.state.created * 1000}</Moment>
+                </Form.Help>
+              )}
             </Form.Control>
             <Form.Control>
-              <Button isStatic>
-              {this.state.created && (
-                <Moment>{this.state.created * 1000}</Moment>
-              )}
+              <Button onClick={this.setCreatedToNow}>
+                <Icon>
+                  <FontAwesomeIcon icon={faClock} />
+                </Icon>
+              </Button>
+            </Form.Control>
+            <Form.Control>
+              <Button onClick={this.clearCreated}>
+                <Icon>
+                  <FontAwesomeIcon icon={faTrash} />
+                </Icon>
               </Button>
             </Form.Control>
           </Form.Field>
@@ -231,12 +289,24 @@ Content-Length: 18
           <Form.Field kind="addons">
             <Form.Control>
       				<Form.Input onChange={this.setExpires} value={this.state.expires ? String(this.state.expires) : ''} />
+              {this.state.expires && (
+                <Form.Help>
+                  <Moment>{this.state.expires * 1000}</Moment>
+                </Form.Help>
+              )}
             </Form.Control>
             <Form.Control>
-              <Button isStatic>
-              {this.state.expires && (
-                <Moment>{this.state.expires * 1000}</Moment>
-              )}
+              <Button onClick={this.addTimeToExpires}>
+                <Icon>
+                  <FontAwesomeIcon icon={faPlusSquare} />
+                </Icon>
+              </Button>
+            </Form.Control>
+            <Form.Control>
+              <Button onClick={this.clearExpires}>
+                <Icon>
+                  <FontAwesomeIcon icon={faTrash} />
+                </Icon>
               </Button>
             </Form.Control>
           </Form.Field>
@@ -267,10 +337,10 @@ Content-Length: 18
       			<Form.Control>
               <Form.Select onChange={this.setAlg} disabled={this.state.algParam !== ''} value={this.state.algParam ? this.state.algParam : this.state.alg}>
                 <option value="jose">Use JWA value from Key</option>
-                <option value="rsa-pss">RSA PSS</option>
-                <option value="ec">EC</option>
-                <option value="hmac">HMAC</option>
-                <option value="rsa">RSA 1.5</option>
+                <option value="rsa-pss-sha512">RSA PSS</option>
+                <option value="ecdsa-p256-sha256">EC</option>
+                <option value="hmac-sha256">HMAC</option>
+                <option value="rsa-v1_5-sha256">RSA 1.5</option>
       				</Form.Select>
       			</Form.Control>
       		</Form.Field>
