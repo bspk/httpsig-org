@@ -1,8 +1,13 @@
 import React, {memo} from 'react';
 import Moment from 'react-moment';
 import Layout from '../components/layout';
+
+import { decodeItem, decodeList, decodeDict, encodeItem, encodeList, encodeDict} from 'structured-field-values';
+
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faClock, faPlusSquare, faTrash } from '@fortawesome/fontawesome-free-solid';
+
+
 
 import { Button, ButtonGroup, Tabs, Container, Section, Level, Form, Columns, Content, Heading, Box, Icon } from 'react-bulma-components';
 
@@ -15,7 +20,6 @@ class HttpSigForm extends React.Component {
       httpMsg: '',
       availableContent: [],
       coveredContent: [],
-      requestTarget: '',
       signatureInput: '',
       algParam: '',
       alg: '',
@@ -23,7 +27,10 @@ class HttpSigForm extends React.Component {
       created: undefined,
       expires: undefined,
       signatureInput: undefined,
-      signatureParams: undefined
+      signatureParams: undefined,
+      inputSignatures: undefined,
+      existingSignature: undefined
+      
     };
   }
   
@@ -77,7 +84,7 @@ Content-Length: 18
       this.setState({
         availableContent: availableContent,
         coveredContent: [],
-        requestTarget: data['request-target']
+        inputSignatures: data['signature-input']
       });
     });
   }
@@ -219,7 +226,35 @@ Content-Length: 18
     });
   }
 
-  
+  selectExistingSignature = (e) => {
+    var sel = e.target.value;
+    if (sel && sel != this.state.existingSignature) {
+      var sig = this.state.inputSignatures[sel];
+      var coveredContent = sig['coveredContent'];
+      var alg = sig['params']['alg'];
+      var created = sig['params']['created'];
+      var expires = sig['params']['expires'];
+      var keyid = sig['params']['keyid'];
+    
+      this.setState({
+        coveredContent: coveredContent,
+        algParam: alg,
+        created: created,
+        expires: expires,
+        keyid: keyid,
+        existingSignature: sel
+      });
+    } else {
+      this.setState({
+        coveredContent: [],
+        algParam: undefined,
+        created: undefined,
+        expires: undefined,
+        keyid: undefined,
+        existingSignature: undefined
+      });
+    }
+  }
   
   render = () => {
     return (
@@ -241,6 +276,19 @@ Content-Length: 18
       <Box>
         <Heading>Signature Parameters</Heading>
         <Section>
+          <Form.Field>
+            <Form.Label>Use parameters from existing signature</Form.Label>
+            <Form.Control>
+              <Form.Select value={this.state.existingSignature} onChange={this.selectExistingSignature}>
+                <option value="">None</option>
+                {this.state.inputSignatures && (
+                  Object.entries(this.state.inputSignatures).map(([k, v], i) => (
+                    <option value={k}>{k}</option>
+                  ))
+                )}
+              </Form.Select>
+            </Form.Control>
+          </Form.Field>
           <CoveredContent coveredContent={this.state.coveredContent} availableContent={this.state.availableContent} setCoveredContent={this.setCoveredContent} />
           <Form.Field>
             <Form.Label>Explicit Signature Algorithm</Form.Label>
@@ -376,14 +424,14 @@ const CoveredContent = ({...props}) =>
       <>
         <Form.Label>Covered content</Form.Label>
     		<Form.Field kind='group'>
-    			<Form.Control>
   {props.availableContent.map((value, index) => (
+    			<Form.Control>
             <label>
-              <input type="checkbox" checked={props.coveredContent.includes(value)} onClick={props.setCoveredContent(value)} />
+              <input type="checkbox" checked={props.coveredContent.includes(value)} onChange={props.setCoveredContent(value)} />
               <code>{value}{props.coveredContent.includes(value)}</code>
             </label>
-  ))}
     			</Form.Control>
+  ))}
     		</Form.Field>
       </>
 );

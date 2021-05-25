@@ -37,13 +37,28 @@ def parse(event, context):
         'headers': headers
     }
 
+    if 'signature-input' in p.get_headers():
+        # existing signatures, parse the values
+        siginputheader = http_sfv.Dictionary()
+        siginputheader.parse(p.get_headers()['signature-input'].encode('utf-8'))
+        siginputs = {}
+        for (k,v) in siginputheader.items():
+            siginput = {
+                'coveredContent': [c.value for c in v], # todo: handle parameters
+                'params': {p:pv for (p,pv) in v.params.items()},
+                'value': str(v)
+            }
+            siginputs[k] = siginput
+            
+        response['signature-input'] = siginputs
+
     if p.get_status_code():
         # response
         response['response'] = {
             'status-code': p.get_status_code()
         }
     else:
-        # this is request-only for now
+        # request
         requestTarget = p.get_method().lower() + ' ' + p.get_path()
         if p.get_query_string():
             requestTarget += '?' + p.get_query_string()
