@@ -5,9 +5,18 @@ except ImportError:
     from http_parser.pyparser import HttpParser
 
 import http_sfv
-import M2Crypto
-import hashlib
+from Cryptodome.Signature import pss
+from Cryptodome.Signature import pkcs1_15
+from Cryptodome.Hash import SHA512
+from Cryptodome.Hash import SHA256
+from Cryptodome.PublicKey import RSA
+from Cryptodome import Random
+from Cryptodome.IO import PEM
+from Cryptodome.IO import PKCS8
+from Cryptodome.Signature.pss import MGF1
+import base64
 
+mgf512 = lambda x, y: MGF1(x, y, SHA512)
 
 def cors(event, controller):
     return {
@@ -50,12 +59,12 @@ def parse(event, context):
             }
             siginputs[k] = siginput
             
-        response['signature-input'] = siginputs
+        response['signatureInput'] = siginputs
 
     if p.get_status_code():
         # response
         response['response'] = {
-            'status-code': p.get_status_code()
+            'statusCode': p.get_status_code()
         }
     else:
         # request
@@ -64,7 +73,7 @@ def parse(event, context):
             requestTarget += '?' + p.get_query_string()
         
         response['request'] = {
-            'request-target': requestTarget,
+            'requestTarget': requestTarget,
             'method': p.get_method().upper(),
             'path': p.get_path(),
             'query': p.get_query_string()
@@ -149,8 +158,8 @@ def input(event, context):
     base += sigparamstr
     
     response = {
-        'signature-input': base,
-        'signature-params': str(sigparams)
+        'signatureInput': base,
+        'signatureParams': str(sigparams)
     }
     
     return {
@@ -161,3 +170,79 @@ def input(event, context):
         'body': json.dumps(response)
     }
     
+def sign(event, context):
+    if not event['body']:
+        return {
+            'statusCode': 400,
+            'headers': {
+                "Access-Control-Allow-Origin": "*"
+            }
+        }
+    
+    data = json.loads(event['body'])
+
+    msg = data['httpMsg']
+    siginput = data['signatureInput']
+    sigparams = data['signatureParams']
+    signingKey = data['signingKey']
+    alg = data['alg']
+    label = data['label']
+    
+    # get the signature parameters line from the input, to use in the header
+    
+    
+    if alg == 'rsa-pss-sha512':
+        key = RSA.import_key(PKCS8.unwrap(PEM.decode(signingKey)[0])[1])
+
+        h = SHA512.new(siginput.encode('utf-8'))
+        signer = pss.new(key, mask_func=mgf512, salt_bytes=64)
+
+        signed = http_sfv.Item(signer.sign(h))
+    else:
+        # unknown algorithm
+        return {
+            'statusCode': 400,
+            'headers': {
+                "Access-Control-Allow-Origin": "*"
+            }
+        }
+    
+    if not (key and signed):
+        return {
+            'statusCode': 500,
+            'headers': {
+                "Access-Control-Allow-Origin": "*"
+            }
+        }
+    
+    
+    # by here, we know that we have the signed blob
+    #http_sfv.Item(signed)
+    encoded = base64.b64encode(signed.value)
+    
+    sigparamheader = http_sfv.InnerList()
+    sigparamheader.parse(sigparams.encode('utf-8'))
+    
+    siginputheader = http_sfv.Dictionary()
+    siginputheader[label] = sigparamheader
+    
+    sigheader = http_sfv.Dictionary()
+    sigheader[label] = signed
+    
+    headers = ''
+    headers += 'Signature-Input: ' + str(siginputheader)
+    headers += '\n'
+    headers += 'Signature: ' + str(sigheader)
+    
+    response = {
+        'signatureOutput': encoded.decode('utf-8'),
+        'headers': headers
+    }
+    
+    return {
+        'statusCode': 200,
+        'headers': {
+            "Access-Control-Allow-Origin": "*"
+        },
+        'body': json.dumps(response)
+    }

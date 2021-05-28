@@ -29,8 +29,12 @@ class HttpSigForm extends React.Component {
       signatureInput: undefined,
       signatureParams: undefined,
       inputSignatures: undefined,
-      existingSignature: undefined
-      
+      existingSignature: undefined,
+      signingKey: '',
+      signatureOutput: '',
+      signatureHeaders: '',
+      label: 'sig',
+      signatureParams: undefined
     };
   }
   
@@ -84,7 +88,9 @@ Content-Length: 18
       this.setState({
         availableContent: availableContent,
         coveredContent: [],
-        inputSignatures: data['signature-input']
+        inputSignatures: data['signatureInput']
+      }, () => {
+        document.getElementById('params').scrollIntoView({behavior: 'smooth'});
       });
     });
   }
@@ -214,8 +220,10 @@ Content-Length: 18
       return response.json()
     }).then(data => {
       this.setState({
-        signatureInput: data['signature-input'],
-        signatureParams: data['signature-params']
+        signatureInput: data['signatureInput'],
+        signatureParams: data['signatureParams']
+      }, () => {
+        document.getElementById('material').scrollIntoView({behavior: 'smooth'});
       });
     });
   }
@@ -256,10 +264,113 @@ Content-Length: 18
     }
   }
   
+  loadRsaPssCert = (e) => {
+    this.setState({
+      signingKey: `-----BEGIN PRIVATE KEY-----
+MIIEvgIBADALBgkqhkiG9w0BAQoEggSqMIIEpgIBAAKCAQEAr4tmm3r20Wd/Pbqv
+P1s2+QEtvpuRaV8Yq40gjUR8y2Rjxa6dpG2GXHbPfvMs8ct+Lh1GH45x28Rw3Ry5
+3mm+oAXjyQ86OnDkZ5N8lYbggD4O3w6M6pAvLkhk95AndTrifbIFPNU8PPMO7Oyr
+FAHqgDsznjPFmTOtCEcN2Z1FpWgchwuYLPL+Wokqltd11nqqzi+bJ9cvSKADYdUA
+AN5WUtzdpiy6LbTgSxP7ociU4Tn0g5I6aDZJ7A8Lzo0KSyZYoA485mqcO0GVAdVw
+9lq4aOT9v6d+nb4bnNkQVklLQ3fVAvJm+xdDOp9LCNCN48V2pnDOkFV6+U9nV5oy
+c6XI2wIDAQABAoIBAQCUB8ip+kJiiZVKF8AqfB/aUP0jTAqOQewK1kKJ/iQCXBCq
+pbo360gvdt05H5VZ/RDVkEgO2k73VSsbulqezKs8RFs2tEmU+JgTI9MeQJPWcP6X
+aKy6LIYs0E2cWgp8GADgoBs8llBq0UhX0KffglIeek3n7Z6Gt4YFge2TAcW2WbN4
+XfK7lupFyo6HHyWRiYHMMARQXLJeOSdTn5aMBP0PO4bQyk5ORxTUSeOciPJUFktQ
+HkvGbym7KryEfwH8Tks0L7WhzyP60PL3xS9FNOJi9m+zztwYIXGDQuKM2GDsITeD
+2mI2oHoPMyAD0wdI7BwSVW18p1h+jgfc4dlexKYRAoGBAOVfuiEiOchGghV5vn5N
+RDNscAFnpHj1QgMr6/UG05RTgmcLfVsI1I4bSkbrIuVKviGGf7atlkROALOG/xRx
+DLadgBEeNyHL5lz6ihQaFJLVQ0u3U4SB67J0YtVO3R6lXcIjBDHuY8SjYJ7Ci6Z6
+vuDcoaEujnlrtUhaMxvSfcUJAoGBAMPsCHXte1uWNAqYad2WdLjPDlKtQJK1diCm
+rqmB2g8QE99hDOHItjDBEdpyFBKOIP+NpVtM2KLhRajjcL9Ph8jrID6XUqikQuVi
+4J9FV2m42jXMuioTT13idAILanYg8D3idvy/3isDVkON0X3UAVKrgMEne0hJpkPL
+FYqgetvDAoGBAKLQ6JZMbSe0pPIJkSamQhsehgL5Rs51iX4m1z7+sYFAJfhvN3Q/
+OGIHDRp6HjMUcxHpHw7U+S1TETxePwKLnLKj6hw8jnX2/nZRgWHzgVcY+sPsReRx
+NJVf+Cfh6yOtznfX00p+JWOXdSY8glSSHJwRAMog+hFGW1AYdt7w80XBAoGBAImR
+NUugqapgaEA8TrFxkJmngXYaAqpA0iYRA7kv3S4QavPBUGtFJHBNULzitydkNtVZ
+3w6hgce0h9YThTo/nKc+OZDZbgfN9s7cQ75x0PQCAO4fx2P91Q+mDzDUVTeG30mE
+t2m3S0dGe47JiJxifV9P3wNBNrZGSIF3mrORBVNDAoGBAI0QKn2Iv7Sgo4T/XjND
+dl2kZTXqGAk8dOhpUiw/HdM3OGWbhHj2NdCzBliOmPyQtAr770GITWvbAI+IRYyF
+S7Fnk6ZVVVHsxjtaHy1uJGFlaZzKR4AGNaUTOJMs6NadzCmGPAxNQQOCqoUjn4XR
+rOjr9w349JooGXhOxbu8nOxX
+-----END PRIVATE KEY-----
+`,
+      alg: 'rsa-pss-sha512'
+    })
+  }
+
+  loadRsaPssPublic = (e) => {
+    this.setState({
+      signingKey: `-----BEGIN PUBLIC KEY-----
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAr4tmm3r20Wd/PbqvP1s2
++QEtvpuRaV8Yq40gjUR8y2Rjxa6dpG2GXHbPfvMs8ct+Lh1GH45x28Rw3Ry53mm+
+oAXjyQ86OnDkZ5N8lYbggD4O3w6M6pAvLkhk95AndTrifbIFPNU8PPMO7OyrFAHq
+gDsznjPFmTOtCEcN2Z1FpWgchwuYLPL+Wokqltd11nqqzi+bJ9cvSKADYdUAAN5W
+Utzdpiy6LbTgSxP7ociU4Tn0g5I6aDZJ7A8Lzo0KSyZYoA485mqcO0GVAdVw9lq4
+aOT9v6d+nb4bnNkQVklLQ3fVAvJm+xdDOp9LCNCN48V2pnDOkFV6+U9nV5oyc6XI
+2wIDAQAB
+-----END PUBLIC KEY-----
+`,
+      alg: 'rsa-pss-sha512'
+    })
+  }
+    
+  setSigningKey = (e) => {
+    this.setState({
+      signingKey: e.target.value
+    });
+  }
+  
+  setLabel = (e) => {
+    this.setState({
+      label: e.target.value
+    });
+  }
+  
+  signInput = (e) => {
+    e.preventDefault();
+    
+    var body = {
+      signatureInput: this.state.signatureInput,
+      signingKey: this.state.signingKey,
+      alg: this.state.alg,
+      label: this.state.label,
+      httpMsg: this.state.httpMsg,
+      signatureParams: this.state.signatureParams
+    };
+    
+    fetch(api + '/sign', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(body)
+    }).then(response => {
+      return response.json()
+    }).then(data => {
+      this.setState({
+        signatureOutput: data['signatureOutput'],
+        signatureHeaders: data['headers']
+      }, () => {
+        document.getElementById('output').scrollIntoView({behavior: 'smooth'});
+      });
+    });
+  }
+  
+  setSignatureOutput = (e) => {
+    this.setState({
+      signatureOutput: e.target.value
+    });
+  }
+  
+  setSignatureHeaders = (e) => {
+    this.setState({
+      signatureHeaders: e.target.value
+    });
+  }
+
   render = () => {
     return (
       <>
-      <Box>
+      <Box id="input">
         <Heading>Input</Heading>
         <Section>
       		<Form.Label>HTTP Message</Form.Label>
@@ -273,7 +384,7 @@ Content-Length: 18
             <Button onClick={this.parseHttpMsg}>Parse</Button>
         </Section>
       </Box>
-      <Box>
+      <Box id="params">
         <Heading>Signature Parameters</Heading>
         <Section>
           <Form.Field>
@@ -361,7 +472,7 @@ Content-Length: 18
           <Button onClick={this.generateSignatureInput}>Generate Signature Input</Button>
         </Section>
       </Box>
-      <Box>
+      <Box id="material">
         <Heading>Signature Material</Heading>
         <Section>
       		<Form.Label>Signature Input String</Form.Label>
@@ -373,42 +484,52 @@ Content-Length: 18
         </Section>
         <Section>
       		<Form.Label>Key material</Form.Label>
+          <Button onClick={this.loadRsaPssCert}>RSA Cert</Button>
       		<Form.Field>
       			<Form.Control>
-  		        <Form.Textarea rows={10} spellCheck={false} />
+  		        <Form.Textarea rows={10} spellCheck={false} onChange={this.setSigningKey} value={this.state.signingKey} />
       			</Form.Control>
       		</Form.Field>
+        </Section>
+        <Section>
+          <Form.Field>
+            <Form.Label>Label</Form.Label>
+            <Form.Control>
+      				<Form.Input onChange={this.setLabel} value={this.state.label} />
+            </Form.Control>
+          </Form.Field>
         </Section>
         <Section>
       		<Form.Field>
       			<Form.Label>Signature Algorithm</Form.Label>
       			<Form.Control>
               <Form.Select onChange={this.setAlg} disabled={this.state.algParam !== ''} value={this.state.algParam ? this.state.algParam : this.state.alg}>
-                <option value="jose">Use JWA value from Key</option>
                 <option value="rsa-pss-sha512">RSA PSS</option>
                 <option value="ecdsa-p256-sha256">EC</option>
                 <option value="hmac-sha256">HMAC</option>
                 <option value="rsa-v1_5-sha256">RSA 1.5</option>
+                <option value="jose">Use JWA value from Key</option>
       				</Form.Select>
       			</Form.Control>
       		</Form.Field>
+          <Button onClick={this.signInput}>Sign Signature Input</Button>
         </Section>
       </Box>
-      <Box>
+      <Box id="output">
         <Heading>Output</Heading>
         <Section>
-      		<Form.Label>Signature Value</Form.Label>
+      		<Form.Label>Signature Value (in Base64)</Form.Label>
       		<Form.Field>
       			<Form.Control>
-  		        <Form.Textarea rows={10} spellCheck={false} />
+  		        <Form.Textarea rows={10} spellCheck={false} onChange={this.setSignatureOutput} value={this.state.signatureOutput} />
       			</Form.Control>
       		</Form.Field>
         </Section>
         <Section>
-      		<Form.Label>Signed HTTP Message</Form.Label>
+      		<Form.Label>HTTP Message Signature Headers</Form.Label>
       		<Form.Field>
       			<Form.Control>
-  		        <Form.Textarea rows={10} spellCheck={false} />
+  		        <Form.Textarea rows={10} spellCheck={false} onChange={this.setSignatureHeaders} value={this.state.signatureHeaders} />
       			</Form.Control>
       		</Form.Field>
         </Section>
@@ -425,7 +546,7 @@ const CoveredContent = ({...props}) =>
         <Form.Label>Covered content</Form.Label>
     		<Form.Field kind='group'>
   {props.availableContent.map((value, index) => (
-    			<Form.Control>
+    			<Form.Control key={index}>
             <label>
               <input type="checkbox" checked={props.coveredContent.includes(value)} onChange={props.setCoveredContent(value)} />
               <code>{value}{props.coveredContent.includes(value)}</code>

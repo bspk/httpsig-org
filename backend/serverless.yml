@@ -18,7 +18,7 @@ service: backend
 
 # You can pin your service to only deploy with a specific Serverless version
 # Check out our docs for more details
-frameworkVersion: '1'
+#frameworkVersion: '1'
 
 provider:
   name: aws
@@ -50,5 +50,12 @@ functions:
     events:
       - http:
           path: input
+          method: post
+          cors: true
+  sign:
+    handler: handler.sign
+    events:
+      - http:
+          path: sign
           method: post
           cors: true
