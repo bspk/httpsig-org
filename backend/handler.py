@@ -188,15 +188,33 @@ def sign(event, context):
     alg = data['alg']
     label = data['label']
     
-    # get the signature parameters line from the input, to use in the header
-    
+    # try parsing a few different key formats
+    try:
+        # PKCS8 Wrapped Key
+        key = RSA.import_key(PKCS8.unwrap(PEM.decode(signingKey)[0])[1])
+    except (ValueError, IndexError, TypeError):
+        try:
+            # Plain RSA Key
+            key = RSA.import_key(signingKey)
+        except (ValueError, IndexError, TypeError):
+            # couldn't parse the key into anything we know
+            return {
+                'statusCode': 400,
+                'headers': {
+                    "Access-Control-Allow-Origin": "*"
+                }
+            }
+        
     
     if alg == 'rsa-pss-sha512':
-        key = RSA.import_key(PKCS8.unwrap(PEM.decode(signingKey)[0])[1])
-
         h = SHA512.new(siginput.encode('utf-8'))
         signer = pss.new(key, mask_func=mgf512, salt_bytes=64)
 
+        signed = http_sfv.Item(signer.sign(h))
+    elif alg == 'rsa-v1_5-sha256':
+        h = SHA256.new(siginput.encode('utf-8'))
+        signer = pkcs1_15.new(key)
+        
         signed = http_sfv.Item(signer.sign(h))
     else:
         # unknown algorithm
