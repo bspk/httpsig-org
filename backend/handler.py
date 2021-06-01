@@ -188,59 +188,77 @@ def sign(event, context):
     msg = data['httpMsg']
     siginput = data['signatureInput']
     sigparams = data['signatureParams']
-    signingKey = data['signingKey']
+    signingKeyType = data['signingKeyType']
     alg = data['alg']
     label = data['label']
     
-    # special shortcut for HMAC using raw text key
-    if alg == 'hmac-sha256':
-        # TODO: potentially extract JWK
-        # key = parseKey(signingKey)
-        signer = HMAC.new(signingKey.encode('utf-8'), digestmod=SHA256)
+    if signingKeyType == 'x509':
+        key = parseKeyX509(data['signingKeyX509'])
+    elif signingKeyType == 'shared':
+        if alg != 'hmac-sha256':
+            # shared key type only good for hmac
+            return {
+                'statusCode': 400,
+                'headers': {
+                    "Access-Control-Allow-Origin": "*"
+                }
+            }
+        
+        sharedKey = data['signingKeyShared'].encode('utf-8')
+    else:
+        # unknown key type
+        return {
+            'statusCode': 400,
+            'headers': {
+                "Access-Control-Allow-Origin": "*"
+            }
+        }
+    
+    if alg == 'jose' and signingKeyType != 'jwk':
+        # JOSE-driven algorithm choice only available for JWK formatted keys
+        return {
+            'statusCode': 400,
+            'headers': {
+                "Access-Control-Allow-Origin": "*"
+            }
+        }
+        
+    if alg == 'rsa-pss-sha512':
+        h = SHA512.new(siginput.encode('utf-8'))
+        signer = pss.new(key, mask_func=mgf512, salt_bytes=64)
+
+        signed = http_sfv.Item(signer.sign(h))
+    elif alg == 'rsa-v1_5-sha256':
+        h = SHA256.new(siginput.encode('utf-8'))
+        signer = pkcs1_15.new(key)
+    
+        signed = http_sfv.Item(signer.sign(h))
+    elif alg == 'ecdsa-p256-sha256':
+        h = SHA256.new(siginput.encode('utf-8'))
+        signer = DSS.new(key, 'fips-186-3')
+    
+        signed = http_sfv.Item(signer.sign(h))
+    elif alg == 'hmac-sha256':
+        signer = HMAC.new(sharedKey, digestmod=SHA256)
         signer.update(siginput.encode('utf-8'))
         
         signed = http_sfv.Item(signer.digest())
     else:
-        key = parseKey(signingKey)
-        if not key:
-            return {
-                'statusCode': 400,
-                'headers': {
-                    "Access-Control-Allow-Origin": "*"
-                }
+        # unknown algorithm
+        return {
+            'statusCode': 400,
+            'headers': {
+                "Access-Control-Allow-Origin": "*"
             }
-    
-        if alg == 'rsa-pss-sha512':
-            h = SHA512.new(siginput.encode('utf-8'))
-            signer = pss.new(key, mask_func=mgf512, salt_bytes=64)
+        }
 
-            signed = http_sfv.Item(signer.sign(h))
-        elif alg == 'rsa-v1_5-sha256':
-            h = SHA256.new(siginput.encode('utf-8'))
-            signer = pkcs1_15.new(key)
-        
-            signed = http_sfv.Item(signer.sign(h))
-        elif alg == 'ecdsa-p256-sha256':
-            h = SHA256.new(siginput.encode('utf-8'))
-            signer = DSS.new(key, 'fips-186-3')
-        
-            signed = http_sfv.Item(signer.sign(h))
-        else:
-            # unknown algorithm
-            return {
-                'statusCode': 400,
-                'headers': {
-                    "Access-Control-Allow-Origin": "*"
-                }
+    if not signed:
+        return {
+            'statusCode': 500,
+            'headers': {
+                "Access-Control-Allow-Origin": "*"
             }
-    
-        if not signed:
-            return {
-                'statusCode': 500,
-                'headers': {
-                    "Access-Control-Allow-Origin": "*"
-                }
-            }
+        }
     
     
     # by here, we know that we have the signed blob
@@ -274,7 +292,7 @@ def sign(event, context):
         'body': json.dumps(response)
     }
 
-def parseKey(signingKey):
+def parseKeyX509(signingKey):
     # try parsing a few different key formats
 
     key = None

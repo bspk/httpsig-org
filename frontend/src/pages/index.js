@@ -30,7 +30,10 @@ class HttpSigForm extends React.Component {
       signatureParams: undefined,
       inputSignatures: undefined,
       existingSignature: undefined,
-      signingKey: '',
+      signingKeyType: 'x509',
+      signingKeyX509: '',
+      signingKeyJwk: '',
+      signingKeyShared: '',
       signatureOutput: '',
       signatureHeaders: '',
       label: 'sig',
@@ -266,7 +269,7 @@ Content-Length: 18
   
   loadRsaPssPrivate = (e) => {
     this.setState({
-      signingKey: `-----BEGIN PRIVATE KEY-----
+      signingKeyX509: `-----BEGIN PRIVATE KEY-----
 MIIEvgIBADALBgkqhkiG9w0BAQoEggSqMIIEpgIBAAKCAQEAr4tmm3r20Wd/Pbqv
 P1s2+QEtvpuRaV8Yq40gjUR8y2Rjxa6dpG2GXHbPfvMs8ct+Lh1GH45x28Rw3Ry5
 3mm+oAXjyQ86OnDkZ5N8lYbggD4O3w6M6pAvLkhk95AndTrifbIFPNU8PPMO7Oyr
@@ -295,13 +298,14 @@ S7Fnk6ZVVVHsxjtaHy1uJGFlaZzKR4AGNaUTOJMs6NadzCmGPAxNQQOCqoUjn4XR
 rOjr9w349JooGXhOxbu8nOxX
 -----END PRIVATE KEY-----
 `,
-      alg: 'rsa-pss-sha512'
+      alg: 'rsa-pss-sha512',
+      signingKeyType: 'x509'
     });
   }
 
   loadRsaPssPublic = (e) => {
     this.setState({
-      signingKey: `-----BEGIN PUBLIC KEY-----
+      signingKeyX509: `-----BEGIN PUBLIC KEY-----
 MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAr4tmm3r20Wd/PbqvP1s2
 +QEtvpuRaV8Yq40gjUR8y2Rjxa6dpG2GXHbPfvMs8ct+Lh1GH45x28Rw3Ry53mm+
 oAXjyQ86OnDkZ5N8lYbggD4O3w6M6pAvLkhk95AndTrifbIFPNU8PPMO7OyrFAHq
@@ -311,7 +315,8 @@ aOT9v6d+nb4bnNkQVklLQ3fVAvJm+xdDOp9LCNCN48V2pnDOkFV6+U9nV5oyc6XI
 2wIDAQAB
 -----END PUBLIC KEY-----
 `,
-      alg: 'rsa-pss-sha512'
+      alg: 'rsa-pss-sha512',
+      signingKeyType: 'x509'
     });
   }
   
@@ -323,13 +328,32 @@ AwEHoUQDQgAEqIVYZVLCrPZHGHjP17CTW0/+D9Lfw0EkjqF7xB4FivAxzic30tMM
 4GF+hR6Dxh71Z50VGGdldkkDXZCnTNnoXQ==
 -----END EC PRIVATE KEY-----
       `,
-      alg: 'ecdsa-p256-sha256'
+      alg: 'ecdsa-p256-sha256',
+      signingKeyType: 'x509'
     });
   }
-    
-  setSigningKey = (e) => {
+
+  setSigningKeyType = (e) => {
     this.setState({
-      signingKey: e.target.value
+      signingKeyType: e.target.value
+    });
+  }
+  
+  setSigningKeyX509 = (e) => {
+    this.setState({
+      signingKeyX509: e.target.value
+    });
+  }
+  
+  setSigningKeyJwk = (e) => {
+    this.setState({
+      signingKeyJwk: e.target.value
+    });
+  }
+  
+  setSigningKeyShared = (e) => {
+    this.setState({
+      signingKeyShared: e.target.value
     });
   }
   
@@ -344,7 +368,10 @@ AwEHoUQDQgAEqIVYZVLCrPZHGHjP17CTW0/+D9Lfw0EkjqF7xB4FivAxzic30tMM
     
     var body = {
       signatureInput: this.state.signatureInput,
-      signingKey: this.state.signingKey,
+      signingKeyType: this.state.signingKeyType,
+      signingKeyX509: this.state.signingKeyX509,
+      signingKeyJwk: this.state.signingKeyJwk,
+      signingKeyShared: this.state.signingKeyShared,
       alg: this.state.alg,
       label: this.state.label,
       httpMsg: this.state.httpMsg,
@@ -495,15 +522,50 @@ AwEHoUQDQgAEqIVYZVLCrPZHGHjP17CTW0/+D9Lfw0EkjqF7xB4FivAxzic30tMM
       		</Form.Field>
         </Section>
         <Section>
-      		<Form.Label>Key material</Form.Label>
-          <Button onClick={this.loadRsaPssPrivate}>RSA Private</Button>
-          <Button onClick={this.loadRsaPssPublic}>RSA Public</Button>
-          <Button onClick={this.loadEccPrivate}>ECC Private</Button>
       		<Form.Field>
+      			<Form.Label>Key Format</Form.Label>
       			<Form.Control>
-  		        <Form.Textarea rows={10} spellCheck={false} onChange={this.setSigningKey} value={this.state.signingKey} />
+              <Form.Select onChange={this.setSigningKeyType} value={this.state.signingKeyType ? this.state.signingKeyType : ''}>
+                <option value="x509">X.509</option>
+                <option value="jwk">JWK</option>
+                <option value="shared">Shared</option>
+      				</Form.Select>
       			</Form.Control>
       		</Form.Field>
+      		<Form.Label>Key material</Form.Label>
+          {this.state.signingKeyType == 'x509' && (
+            <>
+              <Button onClick={this.loadRsaPssPrivate}>RSA Private</Button>
+              <Button onClick={this.loadRsaPssPublic}>RSA Public</Button>
+              <Button onClick={this.loadEccPrivate}>ECC Private</Button>
+          		<Form.Field>
+          			<Form.Control>
+      		        <Form.Textarea rows={10} spellCheck={false} onChange={this.setSigningKeyX509} value={this.state.signingKeyX509} />
+          			</Form.Control>
+          		</Form.Field>
+            </>
+          )}
+          {this.state.signingKeyType == 'jwk' && (
+            <>
+              <Button onClick={this.loadRsaPssPrivateJwk}>RSA Private</Button>
+              <Button onClick={this.loadRsaPssPublicJwk}>RSA Public</Button>
+              <Button onClick={this.loadEccPrivateJwk}>ECC Private</Button>
+          		<Form.Field>
+          			<Form.Control>
+      		        <Form.Textarea rows={10} spellCheck={false} onChange={this.setSigningKeyJwk} value={this.state.signingKeyJwk} />
+          			</Form.Control>
+          		</Form.Field>
+            </>
+          )}
+          {this.state.signingKeyType == 'shared' && (
+            <>
+          		<Form.Field>
+          			<Form.Control>
+      		        <Form.Textarea rows={10} spellCheck={false} onChange={this.setSigningKeyShared} value={this.state.signingKeyShared} />
+          			</Form.Control>
+          		</Form.Field>
+            </>
+          )}
         </Section>
         <Section>
           <Form.Field>
