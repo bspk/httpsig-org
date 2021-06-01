@@ -7,15 +7,19 @@ except ImportError:
 import http_sfv
 from Cryptodome.Signature import pss
 from Cryptodome.Signature import pkcs1_15
+from Cryptodome.Signature import DSS
 from Cryptodome.Hash import SHA512
 from Cryptodome.Hash import SHA256
+from Cryptodome.Hash import HMAC
 from Cryptodome.PublicKey import RSA
+from Cryptodome.PublicKey import ECC
 from Cryptodome import Random
 from Cryptodome.IO import PEM
 from Cryptodome.IO import PKCS8
 from Cryptodome.Signature.pss import MGF1
 import base64
 
+# used with RSA-PSS
 mgf512 = lambda x, y: MGF1(x, y, SHA512)
 
 def cors(event, controller):
@@ -188,50 +192,55 @@ def sign(event, context):
     alg = data['alg']
     label = data['label']
     
-    # try parsing a few different key formats
-    try:
-        # PKCS8 Wrapped Key
-        key = RSA.import_key(PKCS8.unwrap(PEM.decode(signingKey)[0])[1])
-    except (ValueError, IndexError, TypeError):
-        try:
-            # Plain RSA Key
-            key = RSA.import_key(signingKey)
-        except (ValueError, IndexError, TypeError):
-            # couldn't parse the key into anything we know
+    # special shortcut for HMAC using raw text key
+    if alg == 'hmac-sha256':
+        # TODO: potentially extract JWK
+        # key = parseKey(signingKey)
+        signer = HMAC.new(signingKey.encode('utf-8'), digestmod=SHA256)
+        signer.update(siginput.encode('utf-8'))
+        
+        signed = http_sfv.Item(signer.digest())
+    else:
+        key = parseKey(signingKey)
+        if not key:
             return {
                 'statusCode': 400,
                 'headers': {
                     "Access-Control-Allow-Origin": "*"
                 }
             }
-        
     
-    if alg == 'rsa-pss-sha512':
-        h = SHA512.new(siginput.encode('utf-8'))
-        signer = pss.new(key, mask_func=mgf512, salt_bytes=64)
+        if alg == 'rsa-pss-sha512':
+            h = SHA512.new(siginput.encode('utf-8'))
+            signer = pss.new(key, mask_func=mgf512, salt_bytes=64)
 
-        signed = http_sfv.Item(signer.sign(h))
-    elif alg == 'rsa-v1_5-sha256':
-        h = SHA256.new(siginput.encode('utf-8'))
-        signer = pkcs1_15.new(key)
+            signed = http_sfv.Item(signer.sign(h))
+        elif alg == 'rsa-v1_5-sha256':
+            h = SHA256.new(siginput.encode('utf-8'))
+            signer = pkcs1_15.new(key)
         
-        signed = http_sfv.Item(signer.sign(h))
-    else:
-        # unknown algorithm
-        return {
-            'statusCode': 400,
-            'headers': {
-                "Access-Control-Allow-Origin": "*"
+            signed = http_sfv.Item(signer.sign(h))
+        elif alg == 'ecdsa-p256-sha256':
+            h = SHA256.new(siginput.encode('utf-8'))
+            signer = DSS.new(key, 'fips-186-3')
+        
+            signed = http_sfv.Item(signer.sign(h))
+        else:
+            # unknown algorithm
+            return {
+                'statusCode': 400,
+                'headers': {
+                    "Access-Control-Allow-Origin": "*"
+                }
             }
-        }
     
-    if not (key and signed):
-        return {
-            'statusCode': 500,
-            'headers': {
-                "Access-Control-Allow-Origin": "*"
+        if not signed:
+            return {
+                'statusCode': 500,
+                'headers': {
+                    "Access-Control-Allow-Origin": "*"
+                }
             }
-        }
     
     
     # by here, we know that we have the signed blob
@@ -264,3 +273,62 @@ def sign(event, context):
         },
         'body': json.dumps(response)
     }
+
+def parseKey(signingKey):
+    # try parsing a few different key formats
+
+    key = None
+    #print(1)
+    # PKCS8 Wrapped Key
+    try:
+        #print(2)
+        decoded = PEM.decode(signingKey)[0]
+        #print(12)
+        unwrapped = PKCS8.unwrap(decoded)[1]
+        #print(3)
+        try:
+            # RSA first
+            key = RSA.import_key(unwrapped)
+            #print(4)
+            
+        except (ValueError, IndexError, TypeError):
+            try:
+                # EC if possible
+                key = ECC.import_key(unwrapped)
+                #print(5)
+                
+            except (ValueError, IndexError, TypeError):
+                key = None
+                #print(6)
+                
+    except (ValueError, IndexError, TypeError) as err:
+        #print(err)
+        key = None
+        #print(7)
+        
+    
+    # if we successfully parsed a key, return it
+    if key:
+        #print(8)
+        
+        return key
+        
+    # if there's no key yet, try an unwrapped certificate
+    try:
+        # Plain RSA Key
+        key = RSA.import_key(signingKey)
+        #print(9)
+        
+    except (ValueError, IndexError, TypeError):
+        # plain EC key
+        try:
+            key = ECC.import_key(signingKey)
+            #print(13)
+        except (ValueError, IndexError, TypeError) as err:
+            #print(err)
+            key = None
+            #print(10)
+
+    #print(11)
+    return key
+    

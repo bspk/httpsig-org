@@ -264,7 +264,7 @@ Content-Length: 18
     }
   }
   
-  loadRsaPssCert = (e) => {
+  loadRsaPssPrivate = (e) => {
     this.setState({
       signingKey: `-----BEGIN PRIVATE KEY-----
 MIIEvgIBADALBgkqhkiG9w0BAQoEggSqMIIEpgIBAAKCAQEAr4tmm3r20Wd/Pbqv
@@ -296,7 +296,7 @@ rOjr9w349JooGXhOxbu8nOxX
 -----END PRIVATE KEY-----
 `,
       alg: 'rsa-pss-sha512'
-    })
+    });
   }
 
   loadRsaPssPublic = (e) => {
@@ -312,7 +312,19 @@ aOT9v6d+nb4bnNkQVklLQ3fVAvJm+xdDOp9LCNCN48V2pnDOkFV6+U9nV5oyc6XI
 -----END PUBLIC KEY-----
 `,
       alg: 'rsa-pss-sha512'
-    })
+    });
+  }
+  
+  loadEccPrivate = (e) => {
+    this.setState({
+      signingKey: `-----BEGIN EC PRIVATE KEY-----
+MHcCAQEEIFKbhfNZfpDsW43+0+JjUr9K+bTeuxopu653+hBaXGA7oAoGCCqGSM49
+AwEHoUQDQgAEqIVYZVLCrPZHGHjP17CTW0/+D9Lfw0EkjqF7xB4FivAxzic30tMM
+4GF+hR6Dxh71Z50VGGdldkkDXZCnTNnoXQ==
+-----END EC PRIVATE KEY-----
+      `,
+      alg: 'ecdsa-p256-sha256'
+    });
   }
     
   setSigningKey = (e) => {
@@ -484,7 +496,9 @@ aOT9v6d+nb4bnNkQVklLQ3fVAvJm+xdDOp9LCNCN48V2pnDOkFV6+U9nV5oyc6XI
         </Section>
         <Section>
       		<Form.Label>Key material</Form.Label>
-          <Button onClick={this.loadRsaPssCert}>RSA Cert</Button>
+          <Button onClick={this.loadRsaPssPrivate}>RSA Private</Button>
+          <Button onClick={this.loadRsaPssPublic}>RSA Public</Button>
+          <Button onClick={this.loadEccPrivate}>ECC Private</Button>
       		<Form.Field>
       			<Form.Control>
   		        <Form.Textarea rows={10} spellCheck={false} onChange={this.setSigningKey} value={this.state.signingKey} />
@@ -508,7 +522,7 @@ aOT9v6d+nb4bnNkQVklLQ3fVAvJm+xdDOp9LCNCN48V2pnDOkFV6+U9nV5oyc6XI
                 <option value="ecdsa-p256-sha256">EC</option>
                 <option value="hmac-sha256">HMAC</option>
                 <option value="rsa-v1_5-sha256">RSA 1.5</option>
-                <option value="jose">Use JWA value from Key</option>
+                <option value="jose" disabled>Use JWA value from Key</option>
       				</Form.Select>
       			</Form.Control>
       		</Form.Field>
