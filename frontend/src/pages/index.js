@@ -508,19 +508,19 @@ AwEHoUQDQgAEqIVYZVLCrPZHGHjP17CTW0/+D9Lfw0EkjqF7xB4FivAxzic30tMM
       <Box id="params">
         <Heading>Signature Parameters</Heading>
         <Section>
-          <Form.Field>
-            <Form.Label>Use parameters from existing signature</Form.Label>
-            <Form.Control>
-              <Form.Select value={this.state.existingSignature} onChange={this.selectExistingSignature}>
-                <option value="">None</option>
-                {this.state.inputSignatures && (
-                  Object.entries(this.state.inputSignatures).map(([k, v], i) => (
-                    <option value={k}>{k}</option>
-                  ))
-                )}
-              </Form.Select>
-            </Form.Control>
-          </Form.Field>
+          {this.state.inputSignatures && (
+            <Form.Field>
+              <Form.Label>Use parameters from existing signature</Form.Label>
+              <Form.Control>
+                <Form.Select value={this.state.existingSignature} onChange={this.selectExistingSignature}>
+                  <option value="">None</option>
+                    {Object.entries(this.state.inputSignatures).map(([k, v], i) => (
+                      <option value={k}>{k}</option>
+                    ))}
+                </Form.Select>
+              </Form.Control>
+            </Form.Field>
+          )}
           <CoveredContent coveredContent={this.state.coveredContent} availableContent={this.state.availableContent} setCoveredContent={this.setCoveredContent} />
           <Form.Field>
             <Form.Label>Explicit Signature Algorithm</Form.Label>
