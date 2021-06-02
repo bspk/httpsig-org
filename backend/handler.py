@@ -9,6 +9,7 @@ from Cryptodome.Signature import pss
 from Cryptodome.Signature import pkcs1_15
 from Cryptodome.Signature import DSS
 from Cryptodome.Hash import SHA512
+from Cryptodome.Hash import SHA384
 from Cryptodome.Hash import SHA256
 from Cryptodome.Hash import HMAC
 from Cryptodome.PublicKey import RSA
@@ -17,10 +18,15 @@ from Cryptodome import Random
 from Cryptodome.IO import PEM
 from Cryptodome.IO import PKCS8
 from Cryptodome.Signature.pss import MGF1
+
 import base64
 
-# used with RSA-PSS
+# used with RSA-PSS and jose PS512
 mgf512 = lambda x, y: MGF1(x, y, SHA512)
+# used with jose PS384
+mgf384 = lambda x, y: MGF1(x, y, SHA384)
+# used with jose PS256
+mgf256 = lambda x, y: MGF1(x, y, SHA256)
 
 def cors(event, controller):
     return {
@@ -192,6 +198,10 @@ def sign(event, context):
     alg = data['alg']
     label = data['label']
     
+    key = None
+    sharedKey = None
+    jwk = None
+    
     if signingKeyType == 'x509':
         key = parseKeyX509(data['signingKeyX509'])
     elif signingKeyType == 'shared':
@@ -205,6 +215,8 @@ def sign(event, context):
             }
         
         sharedKey = data['signingKeyShared'].encode('utf-8')
+    elif signingKeyType == 'jwk':
+        key, jwk, sharedKey = parseKeyJwk(data['signingKeyJwk'])
     else:
         # unknown key type
         return {
@@ -243,6 +255,84 @@ def sign(event, context):
         signer.update(siginput.encode('utf-8'))
         
         signed = http_sfv.Item(signer.digest())
+    elif alg == 'jose':
+        # we're doing JOSE algs based on the key value
+        if (not 'alg' in jwk) or (jwk['alg'] == 'none'):
+            # unknown algorithm
+            return {
+                'statusCode': 400,
+                'headers': {
+                    "Access-Control-Allow-Origin": "*"
+                }
+            }
+        elif jwk['alg'] == 'RS256':
+            h = SHA256.new(siginput.encode('utf-8'))
+            signer = pkcs1_15.new(key)
+        
+            signed = http_sfv.Item(signer.sign(h))
+        elif jwk['alg'] == 'RS384':
+            h = SHA384.new(siginput.encode('utf-8'))
+            signer = pkcs1_15.new(key)
+        
+            signed = http_sfv.Item(signer.sign(h))
+        elif jwk['alg'] == 'RS512':
+            h = SHA512.new(siginput.encode('utf-8'))
+            signer = pkcs1_15.new(key)
+        
+            signed = http_sfv.Item(signer.sign(h))
+        elif jwk['alg'] == 'PS256':
+            h = SHA256.new(siginput.encode('utf-8'))
+            signer = pss.new(key, mask_func=mgf256, salt_bytes=32)
+        
+            signed = http_sfv.Item(signer.sign(h))
+        elif jwk['alg'] == 'PS384':
+            h = SHA384.new(siginput.encode('utf-8'))
+            signer = pss.new(key, mask_func=mgf384, salt_bytes=48)
+        
+            signed = http_sfv.Item(signer.sign(h))
+        elif jwk['alg'] == 'PS512':
+            h = SHA512.new(siginput.encode('utf-8'))
+            signer = pss.new(key, mask_func=mgf512, salt_bytes=64)
+        
+            signed = http_sfv.Item(signer.sign(h))
+        elif jwk['alg'] == 'HS256':
+            signer = HMAC.new(sharedKey, digestmod=SHA256)
+            signer.update(siginput.encode('utf-8'))
+        
+            signed = http_sfv.Item(signer.digest())
+        elif jwk['alg'] == 'HS384':
+            signer = HMAC.new(sharedKey, digestmod=SHA384)
+            signer.update(siginput.encode('utf-8'))
+        
+            signed = http_sfv.Item(signer.digest())
+        elif jwk['alg'] == 'HS256':
+            signer = HMAC.new(sharedKey, digestmod=SHA512)
+            signer.update(siginput.encode('utf-8'))
+        
+            signed = http_sfv.Item(signer.digest())
+        elif jwk['alg'] == 'ES256':
+            h = SHA256.new(siginput.encode('utf-8'))
+            signer = DSS.new(key, 'fips-186-3')
+
+            signed = http_sfv.Item(signer.sign(h))
+        elif jwk['alg'] == 'ES384':
+            h = SHA384.new(siginput.encode('utf-8'))
+            signer = DSS.new(key, 'fips-186-3')
+
+            signed = http_sfv.Item(signer.sign(h))
+        elif jwk['alg'] == 'ES512':
+            h = SHA512.new(siginput.encode('utf-8'))
+            signer = DSS.new(key, 'fips-186-3')
+
+            signed = http_sfv.Item(signer.sign(h))
+        else:
+            # unknown algorithm
+            return {
+                'statusCode': 400,
+                'headers': {
+                    "Access-Control-Allow-Origin": "*"
+                }
+            }
     else:
         # unknown algorithm
         return {
@@ -291,6 +381,69 @@ def sign(event, context):
         },
         'body': json.dumps(response)
     }
+
+def parseKeyJwk(signingKey):
+    
+    jwk = json.loads(signingKey)
+    key = None
+    sharedKey = None
+    
+    if jwk['kty'] == 'RSA':
+        if 'd' in jwk:
+            # private key
+            if 'q' in jwk and 'p' in jwk:
+                # CRT
+                key = RSA.construct((
+                    b64ToInt(jwk['n']),
+                    b64ToInt(jwk['e']),
+                    b64ToInt(jwk['d']),
+                    b64ToInt(jwk['p']),
+                    b64ToInt(jwk['q'])
+                ))
+            else:
+                # no CRT
+                key = RSA.construct((
+                    b64ToInt(jwk['n']),
+                    b64ToInt(jwk['e']),
+                    b64ToInt(jwk['d'])
+                ))
+        else:
+            # public key
+            key = RSA.construct((
+                b64ToInt(jwk['n']),
+                b64ToInt(jwk['e'])
+            ))
+    elif jwk['kty'] == 'oct':
+        sharedKey = base64.urlsafe_b64decode(jwk['k'] + '===')
+    elif jwk['kty'] == 'EC':
+        if 'd' in jwk:
+            # private key
+            key = ECC.construct(
+                curve = jwk['crv'],
+                d = b64ToInt(jwk['d']),
+                point_x = b64ToInt(jwk['x']),
+                point_y = b64ToInt(jwk['y'])
+            )
+        else:
+            # public key
+            key = ECC.construct(
+                curve = jwk['crv'],
+                point_x = b64ToInt(jwk['x']),
+                point_y = b64ToInt(jwk['y'])
+            )
+    elif jwk['kty'] == 'OKP':
+        return (None, None, None)
+    else:
+        return (None, None, None)
+    
+    return (key, jwk, sharedKey)
+
+def b64ToInt(s):
+    # convert string to integer
+    if s:
+        return int.from_bytes(base64.urlsafe_b64decode(s + '==='), 'big')
+    else:
+        return None
 
 def parseKeyX509(signingKey):
     # try parsing a few different key formats

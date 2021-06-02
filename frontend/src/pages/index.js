@@ -322,7 +322,7 @@ aOT9v6d+nb4bnNkQVklLQ3fVAvJm+xdDOp9LCNCN48V2pnDOkFV6+U9nV5oyc6XI
   
   loadEccPrivate = (e) => {
     this.setState({
-      signingKey: `-----BEGIN EC PRIVATE KEY-----
+      signingKeyX509: `-----BEGIN EC PRIVATE KEY-----
 MHcCAQEEIFKbhfNZfpDsW43+0+JjUr9K+bTeuxopu653+hBaXGA7oAoGCCqGSM49
 AwEHoUQDQgAEqIVYZVLCrPZHGHjP17CTW0/+D9Lfw0EkjqF7xB4FivAxzic30tMM
 4GF+hR6Dxh71Z50VGGdldkkDXZCnTNnoXQ==
@@ -333,10 +333,92 @@ AwEHoUQDQgAEqIVYZVLCrPZHGHjP17CTW0/+D9Lfw0EkjqF7xB4FivAxzic30tMM
     });
   }
 
-  setSigningKeyType = (e) => {
+  loadSharedJwk = (e) => {
     this.setState({
-      signingKeyType: e.target.value
+      signingKeyJwk: `{
+    "kty": "oct",
+    "k": "vmVXzCQe2ASdfg8tTz23rDnVVHfLQGIH0PukOiiepQS15COB8y6Bc6urybq_VryC-6ThcSBBjIL0kvTJwwe5-0cEt0bu-Zk7tZAfpCEgIzRZtig98PYMZNd_6aITWbjq7vLFgeIhr0t_wQGSFvPSGZPVuMuf8IGLx5RuI4Tw5zJE2LN7Byi0FWNsVZrbqnHZBF7Gg3G_gOnt_RaDtbz4DmjRYn2OIAW322JGgQwLww_czDHCe51kZ84qQI_WCRfyCHr9JEr7riLP1StSYfV-oaU_Qlbm-96q1yYKfwDh-pTAFZhZgc9Gz_gXOxkCMCLcuFGMGPeZninUVV1V8-MwQw"
+}
+      `,
+      alg: 'hmac-sha256',
+      signingKeyType: 'jwk'
     });
+  }
+
+  loadRsaPublicJwk = (e) => {
+    this.setState({
+      signingKeyJwk: `{
+    "kty": "RSA",
+    "e": "AQAB",
+    "n": "n3l04HtB4zJLSXajGfRZSGafRRNGgiEpIoZC7NW22RQ-9kALeS_BjkDFAHWvAsMaewVaFySosQis4GqH8p-wFmOg33trWqS50CIwvwShXFhTIkkd1WUMaVsq_dbe6SmJfbtwM0k5hNOl9xl6HCYCMC2BVnvThuDHIQnfnPL_Cw-EDmOrAqBNqbrt-T5l5NHONoBBtfh-2T1q7fWo2rCizq6RfoRsxxESzbzVZVFHABvARkkfbbLHpgo3CEcHhwZ_sgXUY3ydowfrYnpEBKy8mBxkwZG1ZmUOhakpIrUJJdsF_Isw3c1hBo8IttUqiUzYqYp-Lz-OSP4AcHVUYSfiFw"
+}
+      `,
+      alg: 'rsa-pss-sha512',
+      signingKeyType: 'jwk'
+    });
+  }
+
+  loadRsaPrivateJwk = (e) => {
+    this.setState({
+      signingKeyJwk: `{
+    "p": "z0iuJwBV3q5nWo5FslhTL9-AusvTJLd1HemcPXhkyc0pNnpW7m6lNuDkDyXbn85IF-9oYASdK1mbX8hc0sDoUd16PICMTSxJ9E-en8T-yuCPYJFacPLAqNqmOsUiJn0fIH5kwHKDh5P3dirO6m9FZ8K-XMaufKhZYoWgBzNELKk",
+    "kty": "RSA",
+    "q": "xPRM5wRgSZk_vCjJlulGV5RawMCJWmV0WpJpsUHIrUAgdc0Ef_RYZluuqvXxd-y1oLBJqHWm_cMWLOw0AqLhCpRg55RWMhV7xZ_vLfD__pM4X5YXCo1097JkWrWWaO-UfR8guVg7sKx3emJedm0z9TWvEhwtKrLS_cn9knqAEL8",
+    "d": "ZmF5MWywHgX5443wpAcFEsAfXB9F0uErIWkEqjuCCdc_nKP9Oa35GzRlxSfIVYOgCn6jGdyFGDKzmdeKs67lQ1puu0rm3uiGCiMJHHkChuCFbqt2Jbubvj-zWAeMUDBEfp3JKIPIE4g1Mm_-vvd_zCJKuJUCdcL01DccggxWxGgMIGqC71hU66RFO843GmpUsz1Jowjto6BZM-Bto9XST3RQ25rLxr_faHSZ1BayqjLfQooZR-sqiI6NuvRrN8hWSymcyrmS62mtiVRZl6WBRT-59ODfivHELirQLLagBshP70EiCW-7qYaNPKDljriu3kQDwE0awm8j2DHnQKel4Q",
+    "e": "AQAB",
+    "qi": "oKDQI_HD_WJ5aUjaJNnjBvNkVtl_6mAGRDdYveRTDG7e2ujq8VE2iG_rpWqCOMRZUSK0fAfGGoWgQIOg_cmgWJZFotWTe3zdtRP-1b-YyZt6X-gwrqGjfOM10Y2Z2xjq61pp2_Sm9P6k-GBJX8M3YW6OsZI6B43PCMbZ4n5NQJ0",
+    "dp": "qXMp4vo0OGjsVqvtsADiaEVWz91mCyLqW_yoW9v60Lml0kIqpJnQ987awMNbCgWxC9gLxEqhTVngWWnK8AMBKENc9O7FQyVMg6s-6i85dxIiQ3gvrhvUgXTU5UBYTYyFkKOiq2wxt_ivGGugYSd7Xnpl8iP9aiyZfZ_tFVXEipk",
+    "dq": "T4DqdirPD4acMsEoNxHtgjbxt3NBPstLf7AwmAwdDMqhD8x1r40cDh2eUYa8NZPI8ZeX9Deh9DfHANVMXXAQdavVvkWj0c3YS7s22o25WLNnAzbcEDdv6vkJB5DbqXpkr2lcVVUnqzbDeBSzWwzT93z3MdFL7juHbkkWYgWvIpM",
+    "n": "n3l04HtB4zJLSXajGfRZSGafRRNGgiEpIoZC7NW22RQ-9kALeS_BjkDFAHWvAsMaewVaFySosQis4GqH8p-wFmOg33trWqS50CIwvwShXFhTIkkd1WUMaVsq_dbe6SmJfbtwM0k5hNOl9xl6HCYCMC2BVnvThuDHIQnfnPL_Cw-EDmOrAqBNqbrt-T5l5NHONoBBtfh-2T1q7fWo2rCizq6RfoRsxxESzbzVZVFHABvARkkfbbLHpgo3CEcHhwZ_sgXUY3ydowfrYnpEBKy8mBxkwZG1ZmUOhakpIrUJJdsF_Isw3c1hBo8IttUqiUzYqYp-Lz-OSP4AcHVUYSfiFw",
+    "alg": "RS256"
+}
+      `,
+      alg: 'rsa-pss-sha512',
+      signingKeyType: 'jwk'
+    });
+  }
+
+  loadEccPrivateJwk = (e) => {
+    this.setState({
+      signingKeyJwk: `{
+    "kty": "EC",
+    "d": "wcHNx8kkBCcBnGY39K995TShcdOFdKtaRQLGrUELqBI",
+    "crv": "P-256",
+    "x": "m5dnqNXawIKF3qyCfs_raR1LtTKUtyf4t2uVa4Wmd6A",
+    "y": "prF8Lo5JC2JTyj2GwtaI2LWWEaRa6v6XykjUMg-9C1U",
+    "alg": "ES256"
+}
+      `,
+      alg: 'ecdsa-p256-sha256',
+      signingKeyType: 'jwk'
+    });
+  }
+  
+  loadEccPublicJwk = (e) => {
+    this.setState({
+      signingKeyJwk: `{
+    "kty": "EC",
+    "crv": "P-256",
+    "x": "m5dnqNXawIKF3qyCfs_raR1LtTKUtyf4t2uVa4Wmd6A",
+    "y": "prF8Lo5JC2JTyj2GwtaI2LWWEaRa6v6XykjUMg-9C1U"
+}
+      `,
+      alg: 'ecdsa-p256-sha256',
+      signingKeyType: 'jwk'
+    });
+  }
+
+  setSigningKeyType = (e) => {
+    if (e.target.value === 'shared') {
+      this.setState({
+        signingKeyType: e.target.value,
+        alg: 'hmac-sha256'
+      });
+    } else {
+      this.setState({
+        signingKeyType: e.target.value
+      });
+    }
   }
   
   setSigningKeyX509 = (e) => {
@@ -547,9 +629,10 @@ AwEHoUQDQgAEqIVYZVLCrPZHGHjP17CTW0/+D9Lfw0EkjqF7xB4FivAxzic30tMM
           )}
           {this.state.signingKeyType == 'jwk' && (
             <>
-              <Button onClick={this.loadRsaPssPrivateJwk}>RSA Private</Button>
-              <Button onClick={this.loadRsaPssPublicJwk}>RSA Public</Button>
+              <Button onClick={this.loadRsaPrivateJwk}>RSA Private</Button>
+              <Button onClick={this.loadRsaPublicJwk}>RSA Public</Button>
               <Button onClick={this.loadEccPrivateJwk}>ECC Private</Button>
+              <Button onClick={this.loadSharedJwk}>Shared</Button>
           		<Form.Field>
           			<Form.Control>
       		        <Form.Textarea rows={10} spellCheck={false} onChange={this.setSigningKeyJwk} value={this.state.signingKeyJwk} />
@@ -580,11 +663,11 @@ AwEHoUQDQgAEqIVYZVLCrPZHGHjP17CTW0/+D9Lfw0EkjqF7xB4FivAxzic30tMM
       			<Form.Label>Signature Algorithm</Form.Label>
       			<Form.Control>
               <Form.Select onChange={this.setAlg} disabled={this.state.algParam !== ''} value={this.state.algParam ? this.state.algParam : this.state.alg}>
-                <option value="rsa-pss-sha512">RSA PSS</option>
-                <option value="ecdsa-p256-sha256">EC</option>
+                <option value="rsa-pss-sha512" disabled={this.state.signingKeyType == 'shared'}>RSA PSS</option>
+                <option value="ecdsa-p256-sha256" disabled={this.state.signingKeyType == 'shared'}>EC</option>
                 <option value="hmac-sha256">HMAC</option>
-                <option value="rsa-v1_5-sha256">RSA 1.5</option>
-                <option value="jose" disabled>Use JWA value from Key</option>
+                <option value="rsa-v1_5-sha256" disabled={this.state.signingKeyType == 'shared'}>RSA 1.5</option>
+                <option value="jose" disabled={this.state.signingKeyType !== 'jwk'}>Use JWA value from Key</option>
       				</Form.Select>
       			</Form.Control>
       		</Form.Field>
