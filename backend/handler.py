@@ -60,16 +60,21 @@ def parse(event, context):
         # existing signatures, parse the values
         siginputheader = http_sfv.Dictionary()
         siginputheader.parse(p.get_headers()['signature-input'].encode('utf-8'))
+        
+        sigheader = http_sfv.Dictionary()
+        sigheader.parse(p.get_headers()['signature'].encode('utf-8'))
+        
         siginputs = {}
         for (k,v) in siginputheader.items():
             siginput = {
                 'coveredContent': [c.value for c in v], # todo: handle parameters
                 'params': {p:pv for (p,pv) in v.params.items()},
-                'value': str(v)
+                'value': str(v),
+                'signature': str(sigheader[k])
             }
             siginputs[k] = siginput
             
-        response['signatureInput'] = siginputs
+        response['inputSignatures'] = siginputs
 
     if p.get_status_code():
         # response
@@ -381,6 +386,199 @@ def sign(event, context):
         },
         'body': json.dumps(response)
     }
+
+def verify(event, context):
+    if not event['body']:
+        return {
+            'statusCode': 400,
+            'headers': {
+                "Access-Control-Allow-Origin": "*"
+            }
+        }
+    
+    data = json.loads(event['body'])
+
+    msg = data['httpMsg']
+    siginput = data['signatureInput']
+    sigparams = data['signatureParams']
+    signingKeyType = data['signingKeyType']
+    alg = data['alg']
+    signature = http_sfv.Item()
+    signature.parse(data['signature'].encode('utf-8')) # the parser needs to be called explicitly in this way or else this is treated as a string
+    
+    key = None
+    sharedKey = None
+    jwk = None
+    
+    if signingKeyType == 'x509':
+        key = parseKeyX509(data['signingKeyX509'])
+    elif signingKeyType == 'shared':
+        if alg != 'hmac-sha256':
+            # shared key type only good for hmac
+            return {
+                'statusCode': 400,
+                'headers': {
+                    "Access-Control-Allow-Origin": "*"
+                }
+            }
+        
+        sharedKey = data['signingKeyShared'].encode('utf-8')
+    elif signingKeyType == 'jwk':
+        key, jwk, sharedKey = parseKeyJwk(data['signingKeyJwk'])
+    else:
+        # unknown key type
+        return {
+            'statusCode': 400,
+            'headers': {
+                "Access-Control-Allow-Origin": "*"
+            }
+        }
+    
+    if alg == 'jose' and signingKeyType != 'jwk':
+        # JOSE-driven algorithm choice only available for JWK formatted keys
+        return {
+            'statusCode': 400,
+            'headers': {
+                "Access-Control-Allow-Origin": "*"
+            }
+        }
+    
+    
+    try:
+        verified = False
+        if alg == 'rsa-pss-sha512':
+            h = SHA512.new(siginput.encode('utf-8'))
+            verifier = pss.new(key, mask_func=mgf512, salt_bytes=64)
+
+            verifier.verify(h, signature.value)
+            verified = True
+        elif alg == 'rsa-v1_5-sha256':
+            h = SHA256.new(siginput.encode('utf-8'))
+            verifier = pkcs1_15.new(key)
+    
+            verifier.verify(h, signature.value)
+            verified = True
+        elif alg == 'ecdsa-p256-sha256':
+            h = SHA256.new(siginput.encode('utf-8'))
+            verifier = DSS.new(key, 'fips-186-3')
+    
+            verifier.verify(h, signature.value)
+            verified = True
+        elif alg == 'hmac-sha256':
+            verifier = HMAC.new(sharedKey, digestmod=SHA256)
+            verifier.update(siginput.encode('utf-8'))
+        
+            verified = (verifier.digest() == signature.value)
+        elif alg == 'jose':
+            # we're doing JOSE algs based on the key value
+            if (not 'alg' in jwk) or (jwk['alg'] == 'none'):
+                # unknown algorithm
+                return {
+                    'statusCode': 400,
+                    'headers': {
+                        "Access-Control-Allow-Origin": "*"
+                    }
+                }
+            elif jwk['alg'] == 'RS256':
+                h = SHA256.new(siginput.encode('utf-8'))
+                verifier = pkcs1_15.new(key)
+    
+                verifier.verify(h, signature.value)
+                verified = True
+            elif jwk['alg'] == 'RS384':
+                h = SHA384.new(siginput.encode('utf-8'))
+                verifier = pkcs1_15.new(key)
+    
+                verifier.verify(h, signature.value)
+                verified = True
+            elif jwk['alg'] == 'RS512':
+                h = SHA512.new(siginput.encode('utf-8'))
+                verifier = pkcs1_15.new(key)
+    
+                verifier.verify(h, signature.value)
+                verified = True
+            elif jwk['alg'] == 'PS256':
+                h = SHA256.new(siginput.encode('utf-8'))
+                verifier = pss.new(key, mask_func=mgf256, salt_bytes=32)
+
+                verifier.verify(h, signature.value)
+                verified = True
+            elif jwk['alg'] == 'PS384':
+                h = SHA384.new(siginput.encode('utf-8'))
+                verifier = pss.new(key, mask_func=mgf384, salt_bytes=48)
+
+                verifier.verify(h, signature.value)
+                verified = True
+            elif jwk['alg'] == 'PS512':
+                h = SHA512.new(siginput.encode('utf-8'))
+                verifier = pss.new(key, mask_func=mgf512, salt_bytes=64)
+
+                verifier.verify(h, signature.value)
+                verified = True
+            elif jwk['alg'] == 'HS256':
+                verifier = HMAC.new(sharedKey, digestmod=SHA256)
+                verifier.update(siginput.encode('utf-8'))
+        
+                verified = (verifier.digest() == signature.value)
+            elif jwk['alg'] == 'HS384':
+                verifier = HMAC.new(sharedKey, digestmod=SHA384)
+                verifier.update(siginput.encode('utf-8'))
+        
+                verified = (verifier.digest() == signature.value)
+            elif jwk['alg'] == 'HS512':
+                verifier = HMAC.new(sharedKey, digestmod=SHA512)
+                verifier.update(siginput.encode('utf-8'))
+        
+                verified = (verifier.digest() == signature.value)
+            elif jwk['alg'] == 'ES256':
+                h = SHA256.new(siginput.encode('utf-8'))
+                verifier = DSS.new(key, 'fips-186-3')
+    
+                verifier.verify(h, signature.value)
+                verified = True
+            elif jwk['alg'] == 'ES384':
+                h = SHA384.new(siginput.encode('utf-8'))
+                verifier = DSS.new(key, 'fips-186-3')
+    
+                verifier.verify(h, signature.value)
+                verified = True
+            elif jwk['alg'] == 'ES512':
+                h = SHA512.new(siginput.encode('utf-8'))
+                verifier = DSS.new(key, 'fips-186-3')
+    
+                verifier.verify(h, signature.value)
+                verified = True
+            else:
+                # unknown algorithm
+                return {
+                    'statusCode': 400,
+                    'headers': {
+                        "Access-Control-Allow-Origin": "*"
+                    }
+                }
+        else:
+            # unknown algorithm
+            return {
+                'statusCode': 400,
+                'headers': {
+                    "Access-Control-Allow-Origin": "*"
+                }
+            }
+    except (ValueError, TypeError):
+        verified = False
+
+    response = {
+        'signatureVerified': verified
+    }
+    
+    return {
+        'statusCode': 200,
+        'headers': {
+            "Access-Control-Allow-Origin": "*"
+        },
+        'body': json.dumps(response)
+    }
+
 
 def parseKeyJwk(signingKey):
     

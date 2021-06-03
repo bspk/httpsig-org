@@ -59,3 +59,11 @@ functions:
           path: sign
           method: post
           cors: true
+
+  verify:
+    handler: handler.verify
+    events:
+      - http:
+          path: verify
+          method: post
+          cors: true

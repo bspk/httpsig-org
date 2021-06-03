@@ -9,7 +9,7 @@ import { faClock, faPlusSquare, faTrash } from '@fortawesome/fontawesome-free-so
 
 
 
-import { Button, ButtonGroup, Tabs, Container, Section, Level, Form, Columns, Content, Heading, Box, Icon } from 'react-bulma-components';
+import { Button, ButtonGroup, Tabs, Container, Section, Level, Form, Columns, Content, Heading, Box, Icon, Tag } from 'react-bulma-components';
 
 const api = 'https://y2dgwjj82j.execute-api.us-east-1.amazonaws.com/dev'
 
@@ -37,7 +37,9 @@ class HttpSigForm extends React.Component {
       signatureOutput: '',
       signatureHeaders: '',
       label: 'sig',
-      signatureParams: undefined
+      signatureParams: undefined,
+      verifySignature: undefined,
+      signatureVerified: undefined
     };
   }
   
@@ -72,6 +74,34 @@ Content-Length: 18
     });
   }
 
+  loadExampleSignedRequest = (e) => {
+    this.setState({
+      httpMsg: `POST /foo?param=value&pet=dog HTTP/1.1
+Host: example.com
+Date: Tue, 20 Apr 2021 02:07:55 GMT
+Content-Type: application/json
+Digest: SHA-256=X48E9qOokqqrvdts8nOJRJN3OWDUoyWxBf7kbu9DBPE=
+Content-Length: 18
+Signature-Input: sig=("@request-target" "host" "content-type" "content-length");created=1622749937;keyid="RSA (X.509 preloaded)"
+Signature: sig=:I5nyJmVtLdQWQV19QFCx93ADnMFE4Cw4Myt/xXUi0anu8YltKs5QwtiFUPXcjlrIVXHWbYu4cZWAoh4Wn8G2UTZNm6zx5v7jg5OunMc+ecKISSHBLkSbvWQL9+ytV38pAUxfvxaBIk6NG7NXjp3hywm9WAZUqmWYvpWcQ/gYsyqI2jR962HL1uc0p2sLgjz/oKp7zEAZYH2tJ4d76GgQrxR/QhiWGpnAnZI9m5xwwO1cnus5W6bjoRHkHI9O/EEUN0QNWvjSvjytaBKvxrRsmh24QzaibzwP7IVdBdCg4qy58nVS4KgBRDgUHrZLILvl5m39BU+B8x0LgA6fZ8/31w==:
+
+{"hello": "world"}`
+    });
+  }
+  
+  loadExampleSignedResponse = (e) => {
+    this.setState({
+      httpMsg: `HTTP/1.1 200 OK
+Date: Tue, 20 Apr 2021 02:07:56 GMT
+Content-Type: application/json
+Digest: SHA-256=X48E9qOokqqrvdts8nOJRJN3OWDUoyWxBf7kbu9DBPE=
+Content-Length: 18
+Signature-Input: sig=("@status-code" "content-type" "content-length" "digest");created=1622749937;keyid="RSA (X.509 preloaded)"
+Signature: sig=:hFXQivWrXlTbzYLDs0yWxo+4/REu/OMEysVmK+OMidjLZ8nQXq/LrJPrFdEwNBV/H3193LoXw1PaXlsP5noiM+R7hGKXJqYWb42MLIA6J7GXoeO2NPRlFvJNidAb85WjeXhi+E/6avFeY8jsb+EhHmbLYcjZwTjVyjZCHW671VG3/BWWmQMXA+xdENVuY81N9ZQxrHtX7ajDfxY9ulZxndaquJ/xkNVeW2KLvH8uff6SRuYg9lcacJrLUmN93xyOVBtZg7/5Ta9o+GCDXAiQL1bT1uVZF4tAkTLrctQN5Nk8AC9+CCe29vuT3tl5CGdmU5SXKVvSYNxvJV4xIgq8GA==:
+      
+{"hello": "world"}`
+    });
+  }
   
   parseHttpMsg = (e) => {
     e.preventDefault();
@@ -91,7 +121,7 @@ Content-Length: 18
       this.setState({
         availableContent: availableContent,
         coveredContent: [],
-        inputSignatures: data['signatureInput']
+        inputSignatures: data['inputSignatures']
       }, () => {
         document.getElementById('params').scrollIntoView({behavior: 'smooth'});
       });
@@ -487,6 +517,43 @@ AwEHoUQDQgAEqIVYZVLCrPZHGHjP17CTW0/+D9Lfw0EkjqF7xB4FivAxzic30tMM
       signatureHeaders: e.target.value
     });
   }
+  
+  selectVerifySignature = (e) => {
+    this.setState({
+      verifySignature: e.target.value
+    });
+  }
+  
+  verifySignature = (e) => {
+    e.preventDefault();
+
+    var body = {
+      signatureInput: this.state.signatureInput,
+      signingKeyType: this.state.signingKeyType,
+      signingKeyX509: this.state.signingKeyX509,
+      signingKeyJwk: this.state.signingKeyJwk,
+      signingKeyShared: this.state.signingKeyShared,
+      alg: this.state.alg,
+      label: this.state.label,
+      httpMsg: this.state.httpMsg,
+      signatureParams: this.state.signatureParams,
+      signature: this.state.inputSignatures[this.state.verifySignature]['signature']
+    };
+    
+    fetch(api + '/verify', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(body)
+    }).then(response => {
+      return response.json()
+    }).then(data => {
+      this.setState({
+        signatureVerified: data['signatureVerified']
+      }, () => {
+        document.getElementById('output').scrollIntoView({behavior: 'smooth'});
+      });
+    });
+  }
 
   render = () => {
     return (
@@ -497,12 +564,16 @@ AwEHoUQDQgAEqIVYZVLCrPZHGHjP17CTW0/+D9Lfw0EkjqF7xB4FivAxzic30tMM
       		<Form.Label>HTTP Message</Form.Label>
           <Button onClick={this.loadExampleRequest}>Example Request</Button>
           <Button onClick={this.loadExampleResponse}>Example Response</Button>
+          <Button onClick={this.loadExampleSignedRequest}>Example Signed Request</Button>
+          <Button onClick={this.loadExampleSignedResponse}>Example Signed Response</Button>
       		<Form.Field>
       			<Form.Control>
   		        <Form.Textarea rows={10} spellCheck={false} onChange={this.setHttpMsg} value={this.state.httpMsg} />
       			</Form.Control>
       		</Form.Field>
-            <Button onClick={this.parseHttpMsg}>Parse</Button>
+        </Section>
+        <Section>
+          <Button onClick={this.parseHttpMsg}>Parse</Button>
         </Section>
       </Box>
       <Box id="params">
@@ -528,7 +599,7 @@ AwEHoUQDQgAEqIVYZVLCrPZHGHjP17CTW0/+D9Lfw0EkjqF7xB4FivAxzic30tMM
       				<Form.Select onChange={this.setAlgParam} value={this.state.algParam}>
                 <option value="">Not Speficied</option>
                 <option value="rsa-pss-sha512">RSA PSS</option>
-                <option value="ecdsa-p256-sha256">EC</option>
+                <option value="ecdsa-p256-sha256">ECDSA</option>
                 <option value="hmac-sha256">HMAC</option>
                 <option value="rsa-v1_5-sha256">RSA 1.5</option>
       				</Form.Select>
@@ -590,6 +661,8 @@ AwEHoUQDQgAEqIVYZVLCrPZHGHjP17CTW0/+D9Lfw0EkjqF7xB4FivAxzic30tMM
               </Button>
             </Form.Control>
           </Form.Field>
+        </Section>
+        <Section>
           <Button onClick={this.generateSignatureInput}>Generate Signature Input</Button>
         </Section>
       </Box>
@@ -664,18 +737,45 @@ AwEHoUQDQgAEqIVYZVLCrPZHGHjP17CTW0/+D9Lfw0EkjqF7xB4FivAxzic30tMM
       			<Form.Control>
               <Form.Select onChange={this.setAlg} disabled={this.state.algParam !== ''} value={this.state.algParam ? this.state.algParam : this.state.alg}>
                 <option value="rsa-pss-sha512" disabled={this.state.signingKeyType == 'shared'}>RSA PSS</option>
-                <option value="ecdsa-p256-sha256" disabled={this.state.signingKeyType == 'shared'}>EC</option>
+                <option value="ecdsa-p256-sha256" disabled={this.state.signingKeyType == 'shared'}>ECDSA</option>
                 <option value="hmac-sha256">HMAC</option>
                 <option value="rsa-v1_5-sha256" disabled={this.state.signingKeyType == 'shared'}>RSA 1.5</option>
                 <option value="jose" disabled={this.state.signingKeyType !== 'jwk'}>Use JWA value from Key</option>
       				</Form.Select>
       			</Form.Control>
       		</Form.Field>
+        </Section>
+        <Section>
           <Button onClick={this.signInput}>Sign Signature Input</Button>
+        </Section>
+        <Section>
+          {this.state.inputSignatures && (
+            <Form.Field>
+              <Form.Control>
+                <Form.Select value={this.state.verifySignature} onChange={this.selectVerifySignature}>
+                  <option value="">--</option>
+                  {Object.entries(this.state.inputSignatures).map(([k, v], i) => (
+                    <option value={k}>{k}</option>
+                  ))}
+                </Form.Select>
+                <Button onClick={this.verifySignature}>Verify Signature</Button>
+              </Form.Control>
+            </Form.Field>
+          )}
         </Section>
       </Box>
       <Box id="output">
         <Heading>Output</Heading>
+        {this.state.signatureVerified !== undefined && (
+        <Section>
+          {this.state.signatureVerified && (
+            <Tag size="large" className="is-fullwidth" color="success">Signature Verified Successfully</Tag>
+          )}
+          {!this.state.signatureVerified && (
+            <Tag size="large" className="is-fullwidth" color="Warning">Signature Verification Failed</Tag>
+          )}
+        </Section>
+        )}
         <Section>
       		<Form.Label>Signature Value (in Base64)</Form.Label>
       		<Form.Field>
@@ -703,7 +803,7 @@ const CoveredContent = ({...props}) =>
 (
       <>
         <Form.Label>Covered content</Form.Label>
-    		<Form.Field kind='group'>
+    		<Form.Field kind='group' multiline>
   {props.availableContent.map((value, index) => (
     			<Form.Control key={index}>
             <label>
