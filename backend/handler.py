@@ -67,7 +67,7 @@ def parse(event, context):
         siginputs = {}
         for (k,v) in siginputheader.items():
             siginput = {
-                'coveredContent': [c.value for c in v], # todo: handle parameters
+                'coveredComponents': [c.value for c in v], # todo: handle parameters
                 'params': {p:pv for (p,pv) in v.params.items()},
                 'value': str(v),
                 'signature': str(sigheader[k])
@@ -119,7 +119,7 @@ def input(event, context):
     
     sigparams = http_sfv.InnerList()
     base = '';
-    for c in data['coveredContent']:
+    for c in data['coveredComponents']:
         if c == '@request-target':
             i = http_sfv.Item(c)
             sigparams.append(i)
@@ -139,13 +139,14 @@ def input(event, context):
             base += "\n"
         elif not c.startswith('@'):
             i = http_sfv.Item(c.lower())
+            v = p.get_headers()[c].strip()
             sigparams.append(i)
             base += str(i)
             base += ': '
-            base += p.get_headers()[c].strip() # TODO: normalize headers better
+            base += v
             base += "\n"
         else:
-            print('Bad content identifier: ' + c)
+            print('Bad Component identifier: ' + c)
             return {
                 'statusCode': 400,
                 'headers': {

@@ -18,8 +18,8 @@ class HttpSigForm extends React.Component {
     super(props);
     this.state = {
       httpMsg: '',
-      availableContent: [],
-      coveredContent: [],
+      availableComponents: [],
+      coveredComponents: [],
       signatureInput: '',
       algParam: '',
       alg: '',
@@ -111,16 +111,16 @@ Signature: sig=:hFXQivWrXlTbzYLDs0yWxo+4/REu/OMEysVmK+OMidjLZ8nQXq/LrJPrFdEwNBV/
     }).then(response => {
       return response.json()
     }).then(data => {
-      var availableContent = data['headers'];
+      var availableComponents = data['headers'];
       if (data['request']) {
-        availableContent.unshift('@request-target');
+        availableComponents.unshift('@request-target');
       }
       if (data['response']) {
-        availableContent.unshift('@status-code');
+        availableComponents.unshift('@status-code');
       }
       this.setState({
-        availableContent: availableContent,
-        coveredContent: [],
+        availableComponents: availableComponents,
+        coveredComponents: [],
         inputSignatures: data['inputSignatures']
       }, () => {
         document.getElementById('params').scrollIntoView({behavior: 'smooth'});
@@ -128,16 +128,16 @@ Signature: sig=:hFXQivWrXlTbzYLDs0yWxo+4/REu/OMEysVmK+OMidjLZ8nQXq/LrJPrFdEwNBV/
     });
   }
   
-  setCoveredContent = (value) => (e) => {
+  setCoveredComponents = (value) => (e) => {
     //e.preventDefault();
-    var covered = new Set(this.state.coveredContent);
+    var covered = new Set(this.state.coveredComponents);
     if (covered.has(value)) {
       covered.delete(value);
     } else {
       covered.add(value);
     }
     this.setState({
-      coveredContent: [...covered]
+      coveredComponents: [...covered]
     });
   }
   
@@ -238,7 +238,7 @@ Signature: sig=:hFXQivWrXlTbzYLDs0yWxo+4/REu/OMEysVmK+OMidjLZ8nQXq/LrJPrFdEwNBV/
     
     var body = {
       msg: this.state.httpMsg,
-      coveredContent: this.state.coveredContent,
+      coveredComponents: this.state.coveredComponents,
       alg: this.state.algParam ? this.state.algParam : undefined,
       keyid: this.state.keyid,
       created: this.state.created,
@@ -247,7 +247,7 @@ Signature: sig=:hFXQivWrXlTbzYLDs0yWxo+4/REu/OMEysVmK+OMidjLZ8nQXq/LrJPrFdEwNBV/
     
     fetch(api + '/input', {
       method: 'POST',
-      headers: {'Content-Type': 'application/json'},
+      headers: {'Components-Type': 'application/json'},
       body: JSON.stringify(body)
     }).then(response => {
       return response.json()
@@ -271,14 +271,14 @@ Signature: sig=:hFXQivWrXlTbzYLDs0yWxo+4/REu/OMEysVmK+OMidjLZ8nQXq/LrJPrFdEwNBV/
     var sel = e.target.value;
     if (sel && sel != this.state.existingSignature) {
       var sig = this.state.inputSignatures[sel];
-      var coveredContent = sig['coveredContent'];
+      var coveredComponents = sig['coveredComponents'];
       var alg = sig['params']['alg'];
       var created = sig['params']['created'];
       var expires = sig['params']['expires'];
       var keyid = sig['params']['keyid'];
     
       this.setState({
-        coveredContent: coveredContent,
+        coveredComponents: coveredComponents,
         algParam: alg,
         created: created,
         expires: expires,
@@ -287,7 +287,7 @@ Signature: sig=:hFXQivWrXlTbzYLDs0yWxo+4/REu/OMEysVmK+OMidjLZ8nQXq/LrJPrFdEwNBV/
       });
     } else {
       this.setState({
-        coveredContent: [],
+        coveredComponents: [],
         algParam: undefined,
         created: undefined,
         expires: undefined,
@@ -345,7 +345,6 @@ aOT9v6d+nb4bnNkQVklLQ3fVAvJm+xdDOp9LCNCN48V2pnDOkFV6+U9nV5oyc6XI
 2wIDAQAB
 -----END PUBLIC KEY-----
 `,
-      alg: 'rsa-pss-sha512',
       signingKeyType: 'x509'
     });
   }
@@ -359,6 +358,17 @@ AwEHoUQDQgAEqIVYZVLCrPZHGHjP17CTW0/+D9Lfw0EkjqF7xB4FivAxzic30tMM
 -----END EC PRIVATE KEY-----
       `,
       alg: 'ecdsa-p256-sha256',
+      signingKeyType: 'x509'
+    });
+  }
+
+  loadEccPublic = (e) => {
+    this.setState({
+      signingKeyX509: `-----BEGIN PUBLIC KEY-----
+MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEqIVYZVLCrPZHGHjP17CTW0/+D9Lf
+w0EkjqF7xB4FivAxzic30tMM4GF+hR6Dxh71Z50VGGdldkkDXZCnTNnoXQ==
+-----END PUBLIC KEY-----
+      `,
       signingKeyType: 'x509'
     });
   }
@@ -492,7 +502,7 @@ AwEHoUQDQgAEqIVYZVLCrPZHGHjP17CTW0/+D9Lfw0EkjqF7xB4FivAxzic30tMM
     
     fetch(api + '/sign', {
       method: 'POST',
-      headers: {'Content-Type': 'application/json'},
+      headers: {'Components-Type': 'application/json'},
       body: JSON.stringify(body)
     }).then(response => {
       return response.json()
@@ -542,7 +552,7 @@ AwEHoUQDQgAEqIVYZVLCrPZHGHjP17CTW0/+D9Lfw0EkjqF7xB4FivAxzic30tMM
     
     fetch(api + '/verify', {
       method: 'POST',
-      headers: {'Content-Type': 'application/json'},
+      headers: {'Components-Type': 'application/json'},
       body: JSON.stringify(body)
     }).then(response => {
       return response.json()
@@ -592,7 +602,7 @@ AwEHoUQDQgAEqIVYZVLCrPZHGHjP17CTW0/+D9Lfw0EkjqF7xB4FivAxzic30tMM
               </Form.Control>
             </Form.Field>
           )}
-          <CoveredContent coveredContent={this.state.coveredContent} availableContent={this.state.availableContent} setCoveredContent={this.setCoveredContent} />
+          <CoveredComponents coveredComponents={this.state.coveredComponents} availableComponents={this.state.availableComponents} setCoveredComponents={this.setCoveredComponents} />
           <Form.Field>
             <Form.Label>Explicit Signature Algorithm</Form.Label>
             <Form.Control>
@@ -772,7 +782,7 @@ AwEHoUQDQgAEqIVYZVLCrPZHGHjP17CTW0/+D9Lfw0EkjqF7xB4FivAxzic30tMM
             <Tag size="large" className="is-fullwidth" color="success">Signature Verified Successfully</Tag>
           )}
           {!this.state.signatureVerified && (
-            <Tag size="large" className="is-fullwidth" color="Warning">Signature Verification Failed</Tag>
+            <Tag size="large" className="is-fullwidth" color="danger">Signature Verification Failed</Tag>
           )}
         </Section>
         )}
@@ -799,16 +809,16 @@ AwEHoUQDQgAEqIVYZVLCrPZHGHjP17CTW0/+D9Lfw0EkjqF7xB4FivAxzic30tMM
   
 }
 
-const CoveredContent = ({...props}) =>
+const CoveredComponents = ({...props}) =>
 (
       <>
-        <Form.Label>Covered content</Form.Label>
+        <Form.Label>Covered Components</Form.Label>
     		<Form.Field kind='group' multiline>
-  {props.availableContent.map((value, index) => (
+  {props.availableComponents.map((value, index) => (
     			<Form.Control key={index}>
             <label>
-              <input type="checkbox" checked={props.coveredContent.includes(value)} onChange={props.setCoveredContent(value)} />
-              <code>{value}{props.coveredContent.includes(value)}</code>
+              <input type="checkbox" checked={props.coveredComponents.includes(value)} onChange={props.setCoveredComponents(value)} />
+              <code>{value}{props.coveredComponents.includes(value)}</code>
             </label>
     			</Form.Control>
   ))}
