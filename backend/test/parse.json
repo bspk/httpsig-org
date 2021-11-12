@@ -1,0 +1,5 @@
+{
+
+"body": "POST \/foo?param=value&pet=dog HTTP\/1.1\r\nHost: example.com\r\nDate: Tue, 20 Apr 2021 02:07:55 GMT\r\nContent-Type: application\/json\r\nDigest: SHA-256=X48E9qOokqqrvdts8nOJRJN3OWDUoyWxBf7kbu9DBPE=\r\nContent-Length: 18\r\n\r\n{\"hello\": \"world\"}"
+
+}

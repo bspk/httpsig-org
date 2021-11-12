@@ -1,0 +1,5 @@
+{
+
+"body": "{\"msg\":\"POST \/foo?param=value&pet=dog HTTP\/1.1\\nHost: example.com\\nDate: Tue, 20 Apr 2021 02:07:55 GMT\\nContent-Type: application\/json\\nDigest: SHA-256=X48E9qOokqqrvdts8nOJRJN3OWDUoyWxBf7kbu9DBPE=\\nContent-Length: 18\\nExample-Dict: en=\\\"Applepie\\\",     da=:w4ZibGV0w6ZydGU=:\\n\\n{\\\"hello\\\": \\\"world\\\"}\",\"coveredComponents\":[{\"id\": \"@method\"},{\"id\": \"content-type\"},{\"id\":\"digest\"}, {\"id\": \"example-dict\", \"key\": \"en\"}],\"keyid\":\"asdf\",\"created\":1636724579}"
+
+}
