@@ -1,5 +1,9 @@
 {
   "dependencies": {
-    "serverless-python-requirements": "^5.1.1"
+    "serverless-python-requirements": "^5.1.1",
+    "slspress": "^2.2.5"
+  },
+  "devDependencies": {
+    "serverless-offline": "^8.2.0"
   }
 }

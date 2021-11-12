@@ -95,38 +95,34 @@ def parse_components(msg):
             )
         except ValueError:
             # not a dictionary, not a problem
-            #print('Not a dict: ' + h)
-            pass
 
-        # try to parse this as a list, see if it works
-        try:
-            sv = http_sfv.List()
-            sv.parse(p.get_headers()[h].encode('utf-8'))
+            # try to parse this as a list, see if it works
+            try:
+                sv = http_sfv.List()
+                sv.parse(p.get_headers()[h].encode('utf-8'))
             
-            response['fields'].append(
-                {
-                    'id': h.lower(),
-                    'sv': True,
-                    'val': str(sv)
-                }
-            )
-        except ValueError:
-            pass
-
-        # try to parse this as an item, see if it works
-        try:
-            sv = http_sfv.Item()
-            sv.parse(p.get_headers()[h].encode('utf-8'))
+                response['fields'].append(
+                    {
+                        'id': h.lower(),
+                        'sv': True,
+                        'val': str(sv)
+                    }
+                )
+            except ValueError:
+                # try to parse this as an item, see if it works
+                try:
+                    sv = http_sfv.Item()
+                    sv.parse(p.get_headers()[h].encode('utf-8'))
             
-            response['fields'].append(
-                {
-                    'id': h.lower(),
-                    'sv': True,
-                    'val': str(sv)
-                }
-            )
-        except ValueError:
-            pass
+                    response['fields'].append(
+                        {
+                            'id': h.lower(),
+                            'sv': True,
+                            'val': str(sv)
+                        }
+                    )
+                except ValueError:
+                    pass
 
     if 'signature-input' in p.get_headers():
         # existing signatures, parse the values
