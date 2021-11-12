@@ -5,6 +5,8 @@ except ImportError:
     from http_parser.pyparser import HttpParser
 
 import http_sfv
+from urllib.parse import parse_qs
+
 from Cryptodome.Signature import pss
 from Cryptodome.Signature import pkcs1_15
 from Cryptodome.Signature import DSS
@@ -47,14 +49,80 @@ def parse(event, context):
         }
     
     msg = event['body'].encode('utf-8')
+    response = parse_components(msg)
+    return {
+        'statusCode': 200,
+        'headers': {
+            "Access-Control-Allow-Origin": "*"
+        },
+        'body': json.dumps(response)
+    }
+    
+def parse_components(msg):
     p = HttpParser()
     p.execute(msg, len(msg))
     
-    headers = [h.lower() for h in p.get_headers()]
+    response = {}
     
-    response = {
-        'headers': headers
-    }
+    response['fields'] = []
+    for h in p.get_headers():
+        response['fields'].append(
+            {
+                'id': h.lower(),
+                'val': p.get_headers()[h] # Note: this normalizes the header value for us
+            }
+        )
+        # try to parse this as a dictionary, see if it works
+        try:
+            dic = http_sfv.Dictionary()
+            dic.parse(p.get_headers()[h].encode('utf-8'))
+            
+            for k in dic:
+                response['fields'].append(
+                    {
+                        'id': h.lower(),
+                        'key': k,
+                        'val': str(dic[k])
+                    }
+                )
+            
+            response['fields'].append(
+                {
+                    'id': h.lower(),
+                    'sv': True,
+                    'val': str(dic)
+                }
+            )
+        except ValueError:
+            # not a dictionary, not a problem
+
+            # try to parse this as a list, see if it works
+            try:
+                sv = http_sfv.List()
+                sv.parse(p.get_headers()[h].encode('utf-8'))
+            
+                response['fields'].append(
+                    {
+                        'id': h.lower(),
+                        'sv': True,
+                        'val': str(sv)
+                    }
+                )
+            except ValueError:
+                # try to parse this as an item, see if it works
+                try:
+                    sv = http_sfv.Item()
+                    sv.parse(p.get_headers()[h].encode('utf-8'))
+            
+                    response['fields'].append(
+                        {
+                            'id': h.lower(),
+                            'sv': True,
+                            'val': str(sv)
+                        }
+                    )
+                except ValueError:
+                    pass
 
     if 'signature-input' in p.get_headers():
         # existing signatures, parse the values
@@ -67,7 +135,7 @@ def parse(event, context):
         siginputs = {}
         for (k,v) in siginputheader.items():
             siginput = {
-                'coveredContent': [c.value for c in v], # todo: handle parameters
+                'coveredComponents': [c.value for c in v], # todo: handle parameters
                 'params': {p:pv for (p,pv) in v.params.items()},
                 'value': str(v),
                 'signature': str(sigheader[k])
@@ -78,29 +146,71 @@ def parse(event, context):
 
     if p.get_status_code():
         # response
-        response['response'] = {
-            'statusCode': p.get_status_code()
-        }
+        response['derived'] = [
+            {
+                'id': '@status',
+                'val': p.get_status_code()
+            }
+        ]
     else:
         # request
-        requestTarget = p.get_method().lower() + ' ' + p.get_path()
-        if p.get_query_string():
-            requestTarget += '?' + p.get_query_string()
-        
-        response['request'] = {
-            'requestTarget': requestTarget,
-            'method': p.get_method().upper(),
-            'path': p.get_path(),
-            'query': p.get_query_string()
-        }
-        
-    return {
-        'statusCode': 200,
-        'headers': {
-            "Access-Control-Allow-Origin": "*"
-        },
-        'body': json.dumps(response)
-    }
+        response['derived'] = [
+            {
+                'id': '@method',
+                'val': p.get_method()
+            },
+            {
+                'id': '@target-uri',
+                'val': 
+                'https://' # TODO: this always assumes an HTTP connection for demo purposes
+                    + p.get_headers()['host'] # TODO: this library assumes HTTP 1.1
+                    + p.get_url()
+            },
+            {
+                'id': '@authority',
+                'val':  p.get_headers()['host'] # TODO: this library assumes HTTP 1.1
+            },
+            {
+                'id': '@scheme',
+                'val':  'https' # TODO: this always assumes an HTTPS connection for demo purposes
+            },
+            {
+                'id': '@request-target',
+                'val':  p.get_url()
+            },
+            {
+                'id': '@path',
+                'val':  p.get_path()
+            },
+            {
+                'id': '@query',
+                'val':  p.get_query_string()
+            }
+        ]
+
+        qs = parse_qs(p.get_query_string())
+        for q in qs:
+            v = qs[q]
+            if len(v) == 1:
+                response['derived'].append(
+                    {
+                        'id': '@query-param',
+                        'name': q,
+                        'val': v[0]
+                    }
+                )
+            elif len(v) > 1:
+                # Multiple values, undefined behavior?
+                for i in range(len(v)):
+                    response['derived'].append(
+                        {
+                            'id': '@query-param',
+                            'name': q,
+                            'val': v[i],
+                            'idx': i
+                        }
+                    )
+    return response
     
 def input(event, context):
     if not event['body']:
@@ -112,46 +222,55 @@ def input(event, context):
         }
     
     data = json.loads(event['body'])
-    
+    #print(data)
     msg = data['msg'].encode('utf-8')
-    p = HttpParser()
-    p.execute(msg, len(msg))
-    
+    # re-parse the input message
+    components = parse_components(msg)
+    #print(components)
     sigparams = http_sfv.InnerList()
     base = '';
-    for c in data['coveredContent']:
-        if c == '@request-target':
-            i = http_sfv.Item(c)
-            sigparams.append(i)
-            base += str(i)
-            base += ': '
-            requestTarget = p.get_method().lower() + ' ' + p.get_path()
-            if p.get_query_string():
-                requestTarget += '?' + p.get_query_string()
-            base += requestTarget
-            base += "\n"
-        elif c == '@status-code':
-            i = http_sfv.Item(c)
-            sigparams.append(i)
-            base += str(i)
-            base += ': '
-            base += str(p.get_status_code())
-            base += "\n"
-        elif not c.startswith('@'):
+    
+    for cc in data['coveredComponents']:
+        c = cc['id']
+        if not c.startswith('@'):
+            # it's a header
             i = http_sfv.Item(c.lower())
+
+            if 'key' in cc:
+                # try a dictionary header value
+                i.params['key'] = cc['key']
+                comp = next((x for x in components['fields'] if 'key' in x and x['id'] == c and x['key'] == cc['key']), None)
+                                
+                sigparams.append(i)
+                base += str(i)
+                base += ': '
+                base += comp['val']
+                base += "\n"
+            elif 'sv' in cc:
+                i.params['sv'] = True
+                comp = next((x for x in components['fields'] if x['id'] == c), None)
+                sigparams.append(i)
+                base += str(i)
+                base += ': '
+                base += comp['val']
+                base += "\n"
+            else:
+                comp = next((x for x in components['fields'] if x['id'] == c), None)
+                sigparams.append(i)
+                base += str(i)
+                base += ': '
+                base += comp['val']
+                base += "\n"
+        else:
+            # it's a derived value
+            i = http_sfv.Item(c)
+            comp = next((x for x in components['derived'] if x['id'] == c), None)
+
             sigparams.append(i)
             base += str(i)
             base += ': '
-            base += p.get_headers()[c].strip() # TODO: normalize headers better
+            base += comp['val']
             base += "\n"
-        else:
-            print('Bad content identifier: ' + c)
-            return {
-                'statusCode': 400,
-                'headers': {
-                    "Access-Control-Allow-Origin": "*"
-                },
-            }
 
     if 'created' in data:
         sigparams.params['created'] = data['created']
@@ -161,6 +280,9 @@ def input(event, context):
     
     if 'keyid' in data:
         sigparams.params['keyid'] = data['keyid']
+    
+    if 'nonce' in data:
+        sigparams.params['nonce'] = data['nonce']
     
     if 'alg' in data:
         sigparams.params['alg'] = data['alg']
@@ -176,7 +298,7 @@ def input(event, context):
         'signatureInput': base,
         'signatureParams': str(sigparams)
     }
-    
+    #print(base)
     return {
         'statusCode': 200,
         'headers': {
@@ -196,7 +318,6 @@ def sign(event, context):
     
     data = json.loads(event['body'])
 
-    msg = data['httpMsg']
     siginput = data['signatureInput']
     sigparams = data['signatureParams']
     signingKeyType = data['signingKeyType']

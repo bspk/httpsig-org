@@ -23,10 +23,11 @@ service: backend
 provider:
   name: aws
   runtime: python3.7
+  lambdaHashingVersion: 20201221
 
 plugins:
   - serverless-python-requirements
-
+  - serverless-offline
 
 custom:
   pythonRequirements:
