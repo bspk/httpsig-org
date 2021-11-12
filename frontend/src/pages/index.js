@@ -12,6 +12,7 @@ import { faClock, faPlusSquare, faTrash } from '@fortawesome/fontawesome-free-so
 import { Button, ButtonGroup, Tabs, Container, Section, Level, Form, Columns, Content, Heading, Box, Icon, Tag } from 'react-bulma-components';
 
 const api = 'https://y2dgwjj82j.execute-api.us-east-1.amazonaws.com/dev'
+//const api = 'http://localhost:3000/dev'
 
 class HttpSigForm extends React.Component {
   constructor(props) {
@@ -56,6 +57,7 @@ Host: example.com
 Date: Tue, 20 Apr 2021 02:07:55 GMT
 Content-Type: application/json
 Digest: SHA-256=X48E9qOokqqrvdts8nOJRJN3OWDUoyWxBf7kbu9DBPE=
+Example-Dict: a=(1 2), b=3, c=4;aa=bb, d=(5 6);valid
 Content-Length: 18
 
 {"hello": "world"}`
@@ -111,13 +113,19 @@ Signature: sig=:hFXQivWrXlTbzYLDs0yWxo+4/REu/OMEysVmK+OMidjLZ8nQXq/LrJPrFdEwNBV/
     }).then(response => {
       return response.json()
     }).then(data => {
-      var availableComponents = data['headers'];
-      if (data['request']) {
-        availableComponents.unshift('@request-target');
-      }
-      if (data['response']) {
-        availableComponents.unshift('@status-code');
-      }
+      var possible = data['fields'].concat(data['derived']);
+      
+      var availableComponents = {};
+      
+      possible.forEach(c => {
+        if (!(c['id'] in availableComponents)) {
+          availableComponents[c['id']] = [];
+        }
+        availableComponents[c['id']].push(c);
+      });
+      
+      console.log(availableComponents);
+      
       this.setState({
         availableComponents: availableComponents,
         coveredComponents: [],
@@ -813,16 +821,22 @@ const CoveredComponents = ({...props}) =>
 (
       <>
         <Form.Label>Covered Components</Form.Label>
+  { Object.keys(props.availableComponents).map((key) => (
     		<Form.Field kind='group' multiline>
-  {props.availableComponents.map((value, index) => (
+    { props.availableComponents[key].map((c, index) => (
     			<Form.Control key={index}>
             <label>
-              <input type="checkbox" checked={props.coveredComponents.includes(value)} onChange={props.setCoveredComponents(value)} />
-              <code>{value}{props.coveredComponents.includes(value)}</code>
+              <input type="checkbox" checked={props.coveredComponents.includes(c)} onChange={props.setCoveredComponents(c)} />
+              <code>{
+                c['id'] + 
+                (c['sv'] ? ";sv" : 
+                  (c['key'] ? ";key=" + c['key'] : 
+                    (c['name'] ? ";name=" + c['name'] : ''))) }</code>
             </label>
     			</Form.Control>
+              ))}
+        </Form.Field>
   ))}
-    		</Form.Field>
       </>
 );
 
