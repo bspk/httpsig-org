@@ -1,7 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import './layout.sass'
-import { Button, Tabs, Container, Section, Level, Form, Columns, Content, Hero, Heading } from 'react-bulma-components';
+import { Button, Tabs, Container, Section, Level, Form, Columns, Content, Hero, Heading, Footer } from 'react-bulma-components';
 import { Helmet } from 'react-helmet'
 
 const Layout = ({ children }) => (
@@ -17,6 +17,7 @@ const Layout = ({ children }) => (
             </Hero.Body>
           </Hero>
           {children}
+          <Footer>This service is provided by <a href="https://bspk.io/">Bespoke Engineering</a> and <a href="https://securekey.com">SecureKey</a>. The source is available <a href="https://github.com/bspk/httpsig-org/">on GitHub</a>.</Footer>
       </Container>
   </>
 )

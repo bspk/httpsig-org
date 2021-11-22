@@ -11,7 +11,7 @@ import { faClock, faPlusSquare, faTrash } from '@fortawesome/fontawesome-free-so
 
 import { Button, ButtonGroup, Tabs, Container, Section, Level, Form, Columns, Content, Heading, Box, Icon, Tag } from 'react-bulma-components';
 
-const api = 'https://y2dgwjj82j.execute-api.us-east-1.amazonaws.com/dev'
+const api = 'https://o52ky0nc31.execute-api.ca-central-1.amazonaws.com/dev'
 //const api = 'http://localhost:3000/dev'
 
 class HttpSigForm extends React.Component {
