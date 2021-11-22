@@ -22,7 +22,7 @@ service: backend
 
 provider:
   name: aws
-  runtime: python3.7
+  runtime: python3.9
   lambdaHashingVersion: 20201221
 
 plugins:
