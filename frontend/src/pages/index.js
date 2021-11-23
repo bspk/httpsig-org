@@ -45,20 +45,20 @@ class HttpSigForm extends React.Component {
       signatureVerified: undefined
     };
   }
-  
+
   setHttpMsg = (e) => {
     this.setState({
       httpMsg: e.target.value
     });
   }
-  
+
   loadExampleRequest = (e) => {
     this.setState({
       httpMsg: `POST /foo?param=value&pet=dog HTTP/1.1
 Host: example.com
 Date: Tue, 20 Apr 2021 02:07:55 GMT
 Content-Type: application/json
-Digest: SHA-256=X48E9qOokqqrvdts8nOJRJN3OWDUoyWxBf7kbu9DBPE=
+Digest: sha-256=X48E9qOokqqrvdts8nOJRJN3OWDUoyWxBf7kbu9DBPE=
 Example-Dict: a=(1 2), b=3, c=4;aa=bb, d=(5 6);valid
 Content-Length: 18
 
@@ -71,7 +71,7 @@ Content-Length: 18
       httpMsg: `HTTP/1.1 200 OK
 Date: Tue, 20 Apr 2021 02:07:56 GMT
 Content-Type: application/json
-Digest: SHA-256=X48E9qOokqqrvdts8nOJRJN3OWDUoyWxBf7kbu9DBPE=
+Digest: sha-256=X48E9qOokqqrvdts8nOJRJN3OWDUoyWxBf7kbu9DBPE=
 Content-Length: 18
 
 {"hello": "world"}`
@@ -84,7 +84,7 @@ Content-Length: 18
 Host: example.com
 Date: Tue, 20 Apr 2021 02:07:55 GMT
 Content-Type: application/json
-Digest: SHA-256=X48E9qOokqqrvdts8nOJRJN3OWDUoyWxBf7kbu9DBPE=
+Digest: sha-256=X48E9qOokqqrvdts8nOJRJN3OWDUoyWxBf7kbu9DBPE=
 Content-Length: 18
 Signature-Input: sig=("@request-target" "host" "content-type" "content-length");created=1622749937;keyid="RSA (X.509 preloaded)"
 Signature: sig=:I5nyJmVtLdQWQV19QFCx93ADnMFE4Cw4Myt/xXUi0anu8YltKs5QwtiFUPXcjlrIVXHWbYu4cZWAoh4Wn8G2UTZNm6zx5v7jg5OunMc+ecKISSHBLkSbvWQL9+ytV38pAUxfvxaBIk6NG7NXjp3hywm9WAZUqmWYvpWcQ/gYsyqI2jR962HL1uc0p2sLgjz/oKp7zEAZYH2tJ4d76GgQrxR/QhiWGpnAnZI9m5xwwO1cnus5W6bjoRHkHI9O/EEUN0QNWvjSvjytaBKvxrRsmh24QzaibzwP7IVdBdCg4qy58nVS4KgBRDgUHrZLILvl5m39BU+B8x0LgA6fZ8/31w==:
@@ -92,21 +92,21 @@ Signature: sig=:I5nyJmVtLdQWQV19QFCx93ADnMFE4Cw4Myt/xXUi0anu8YltKs5QwtiFUPXcjlrI
 {"hello": "world"}`
     });
   }
-  
+
   loadExampleSignedResponse = (e) => {
     this.setState({
       httpMsg: `HTTP/1.1 200 OK
 Date: Tue, 20 Apr 2021 02:07:56 GMT
 Content-Type: application/json
-Digest: SHA-256=X48E9qOokqqrvdts8nOJRJN3OWDUoyWxBf7kbu9DBPE=
+Digest: sha-256=X48E9qOokqqrvdts8nOJRJN3OWDUoyWxBf7kbu9DBPE=
 Content-Length: 18
 Signature-Input: sig=("@status-code" "content-type" "content-length" "digest");created=1622749937;keyid="RSA (X.509 preloaded)"
 Signature: sig=:hFXQivWrXlTbzYLDs0yWxo+4/REu/OMEysVmK+OMidjLZ8nQXq/LrJPrFdEwNBV/H3193LoXw1PaXlsP5noiM+R7hGKXJqYWb42MLIA6J7GXoeO2NPRlFvJNidAb85WjeXhi+E/6avFeY8jsb+EhHmbLYcjZwTjVyjZCHW671VG3/BWWmQMXA+xdENVuY81N9ZQxrHtX7ajDfxY9ulZxndaquJ/xkNVeW2KLvH8uff6SRuYg9lcacJrLUmN93xyOVBtZg7/5Ta9o+GCDXAiQL1bT1uVZF4tAkTLrctQN5Nk8AC9+CCe29vuT3tl5CGdmU5SXKVvSYNxvJV4xIgq8GA==:
-      
+
 {"hello": "world"}`
     });
   }
-  
+
   parseHttpMsg = (e) => {
     e.preventDefault();
     fetch(api + '/parse', {
@@ -116,18 +116,18 @@ Signature: sig=:hFXQivWrXlTbzYLDs0yWxo+4/REu/OMEysVmK+OMidjLZ8nQXq/LrJPrFdEwNBV/
       return response.json()
     }).then(data => {
       var possible = data['fields'].concat(data['derived']);
-      
+
       var availableComponents = {};
-      
+
       possible.forEach(c => {
         if (!(c['id'] in availableComponents)) {
           availableComponents[c['id']] = [];
         }
         availableComponents[c['id']].push(c);
       });
-      
+
       console.log(availableComponents);
-      
+
       this.setState({
         availableComponents: availableComponents,
         coveredComponents: [],
@@ -137,7 +137,7 @@ Signature: sig=:hFXQivWrXlTbzYLDs0yWxo+4/REu/OMEysVmK+OMidjLZ8nQXq/LrJPrFdEwNBV/
       });
     });
   }
-  
+
   setCoveredComponents = (value) => (e) => {
     //e.preventDefault();
     var covered = new Set(this.state.coveredComponents);
@@ -150,25 +150,25 @@ Signature: sig=:hFXQivWrXlTbzYLDs0yWxo+4/REu/OMEysVmK+OMidjLZ8nQXq/LrJPrFdEwNBV/
       coveredComponents: [...covered]
     });
   }
-  
+
   setAlgParam = (e) => {
     this.setState({
       algParam: e.target.value
     });
   }
-  
+
   setAlg = (e) => {
     this.setState({
       alg: e.target.value
     });
   }
-  
+
   setKeyid = (e) => {
     this.setState({
       keyid: e.target.value
     });
   }
-  
+
   setCreated = (e) => {
     if (!e.target.value) {
       this.setState({
@@ -183,20 +183,20 @@ Signature: sig=:hFXQivWrXlTbzYLDs0yWxo+4/REu/OMEysVmK+OMidjLZ8nQXq/LrJPrFdEwNBV/
       }
     }
   }
-  
+
   setCreatedToNow = (e) => {
     var now = Math.floor(Date.now() / 1000);
     this.setState({
       created: now
     });
   }
-  
+
   clearCreated = (e) => {
     this.setState({
       created: undefined
     });
   }
-  
+
   setExpires = (e) => {
     if (!e.target.value) {
       this.setState({
@@ -211,7 +211,7 @@ Signature: sig=:hFXQivWrXlTbzYLDs0yWxo+4/REu/OMEysVmK+OMidjLZ8nQXq/LrJPrFdEwNBV/
       }
     }
   }
-  
+
   addTimeToExpires = (e) => {
     if (!this.state.expires) {
       // expiration isn't set
@@ -236,16 +236,16 @@ Signature: sig=:hFXQivWrXlTbzYLDs0yWxo+4/REu/OMEysVmK+OMidjLZ8nQXq/LrJPrFdEwNBV/
       });
     }
   }
-  
+
   clearExpires = (e) => {
     this.setState({
       expires: undefined
     });
   }
-  
+
   generateSignatureInput = (e) => {
     e.preventDefault();
-    
+
     var body = {
       msg: this.state.httpMsg,
       coveredComponents: this.state.coveredComponents,
@@ -254,7 +254,7 @@ Signature: sig=:hFXQivWrXlTbzYLDs0yWxo+4/REu/OMEysVmK+OMidjLZ8nQXq/LrJPrFdEwNBV/
       created: this.state.created,
       expires: this.state.expires
     };
-    
+
     fetch(api + '/input', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
@@ -270,7 +270,7 @@ Signature: sig=:hFXQivWrXlTbzYLDs0yWxo+4/REu/OMEysVmK+OMidjLZ8nQXq/LrJPrFdEwNBV/
       });
     });
   }
-  
+
   setSignatureInput = (e) => {
     this.setState({
       signatureInput: e.target.value
@@ -286,7 +286,7 @@ Signature: sig=:hFXQivWrXlTbzYLDs0yWxo+4/REu/OMEysVmK+OMidjLZ8nQXq/LrJPrFdEwNBV/
       var created = sig['params']['created'];
       var expires = sig['params']['expires'];
       var keyid = sig['params']['keyid'];
-    
+
       this.setState({
         coveredComponents: coveredComponents,
         algParam: alg,
@@ -306,7 +306,7 @@ Signature: sig=:hFXQivWrXlTbzYLDs0yWxo+4/REu/OMEysVmK+OMidjLZ8nQXq/LrJPrFdEwNBV/
       });
     }
   }
-  
+
   loadRsaPssPrivate = (e) => {
     this.setState({
       signingKeyX509: `-----BEGIN PRIVATE KEY-----
@@ -358,7 +358,7 @@ aOT9v6d+nb4bnNkQVklLQ3fVAvJm+xdDOp9LCNCN48V2pnDOkFV6+U9nV5oyc6XI
       signingKeyType: 'x509'
     });
   }
-  
+
   loadEccPrivate = (e) => {
     this.setState({
       signingKeyX509: `-----BEGIN EC PRIVATE KEY-----
@@ -443,7 +443,7 @@ w0EkjqF7xB4FivAxzic30tMM4GF+hR6Dxh71Z50VGGdldkkDXZCnTNnoXQ==
       signingKeyType: 'jwk'
     });
   }
-  
+
   loadEccPublicJwk = (e) => {
     this.setState({
       signingKeyJwk: `{
@@ -470,34 +470,34 @@ w0EkjqF7xB4FivAxzic30tMM4GF+hR6Dxh71Z50VGGdldkkDXZCnTNnoXQ==
       });
     }
   }
-  
+
   setSigningKeyX509 = (e) => {
     this.setState({
       signingKeyX509: e.target.value
     });
   }
-  
+
   setSigningKeyJwk = (e) => {
     this.setState({
       signingKeyJwk: e.target.value
     });
   }
-  
+
   setSigningKeyShared = (e) => {
     this.setState({
       signingKeyShared: e.target.value
     });
   }
-  
+
   setLabel = (e) => {
     this.setState({
       label: e.target.value
     });
   }
-  
+
   signInput = (e) => {
     e.preventDefault();
-    
+
     var body = {
       signatureInput: this.state.signatureInput,
       signingKeyType: this.state.signingKeyType,
@@ -509,7 +509,7 @@ w0EkjqF7xB4FivAxzic30tMM4GF+hR6Dxh71Z50VGGdldkkDXZCnTNnoXQ==
       httpMsg: this.state.httpMsg,
       signatureParams: this.state.signatureParams
     };
-    
+
     fetch(api + '/sign', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
@@ -525,25 +525,25 @@ w0EkjqF7xB4FivAxzic30tMM4GF+hR6Dxh71Z50VGGdldkkDXZCnTNnoXQ==
       });
     });
   }
-  
+
   setSignatureOutput = (e) => {
     this.setState({
       signatureOutput: e.target.value
     });
   }
-  
+
   setSignatureHeaders = (e) => {
     this.setState({
       signatureHeaders: e.target.value
     });
   }
-  
+
   selectVerifySignature = (e) => {
     this.setState({
       verifySignature: e.target.value
     });
   }
-  
+
   verifySignature = (e) => {
     e.preventDefault();
 
@@ -559,7 +559,7 @@ w0EkjqF7xB4FivAxzic30tMM4GF+hR6Dxh71Z50VGGdldkkDXZCnTNnoXQ==
       signatureParams: this.state.signatureParams,
       signature: this.state.inputSignatures[this.state.verifySignature]['signature']
     };
-    
+
     fetch(api + '/verify', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
@@ -816,7 +816,7 @@ w0EkjqF7xB4FivAxzic30tMM4GF+hR6Dxh71Z50VGGdldkkDXZCnTNnoXQ==
       </>
     );
   }
-  
+
 }
 
 const CoveredComponents = ({...props}) =>
@@ -830,9 +830,9 @@ const CoveredComponents = ({...props}) =>
             <label>
               <input type="checkbox" checked={props.coveredComponents.includes(c)} onChange={props.setCoveredComponents(c)} />
               <code>{
-                c['id'] + 
-                (c['sv'] ? ";sv" : 
-                  (c['key'] ? ";key=" + c['key'] : 
+                c['id'] +
+                (c['sv'] ? ";sv" :
+                  (c['key'] ? ";key=" + c['key'] :
                     (c['name'] ? ";name=" + c['name'] : ''))) }</code>
             </label>
     			</Form.Control>
