@@ -11,7 +11,9 @@ import { faClock, faPlusSquare, faTrash } from '@fortawesome/fontawesome-free-so
 
 import { Button, ButtonGroup, Tabs, Container, Section, Level, Form, Columns, Content, Heading, Box, Icon, Tag } from 'react-bulma-components';
 
-const api = 'https://o52ky0nc31.execute-api.ca-central-1.amazonaws.com/dev'
+//const api = 'https://y2dgwjj82j.execute-api.us-east-1.amazonaws.com/dev' // bspk test (legacy)
+//const api = 'https://w1w57e3ati.execute-api.us-east-1.amazonaws.com/dev' // bspk test
+const api = 'https://o52ky0nc31.execute-api.ca-central-1.amazonaws.com/dev' // secureKey install
 //const api = 'http://localhost:3000/dev'
 
 class HttpSigForm extends React.Component {
@@ -255,7 +257,7 @@ Signature: sig=:hFXQivWrXlTbzYLDs0yWxo+4/REu/OMEysVmK+OMidjLZ8nQXq/LrJPrFdEwNBV/
     
     fetch(api + '/input', {
       method: 'POST',
-      headers: {'Components-Type': 'application/json'},
+      headers: {'Content-Type': 'application/json'},
       body: JSON.stringify(body)
     }).then(response => {
       return response.json()
@@ -510,7 +512,7 @@ w0EkjqF7xB4FivAxzic30tMM4GF+hR6Dxh71Z50VGGdldkkDXZCnTNnoXQ==
     
     fetch(api + '/sign', {
       method: 'POST',
-      headers: {'Components-Type': 'application/json'},
+      headers: {'Content-Type': 'application/json'},
       body: JSON.stringify(body)
     }).then(response => {
       return response.json()
@@ -560,7 +562,7 @@ w0EkjqF7xB4FivAxzic30tMM4GF+hR6Dxh71Z50VGGdldkkDXZCnTNnoXQ==
     
     fetch(api + '/verify', {
       method: 'POST',
-      headers: {'Components-Type': 'application/json'},
+      headers: {'Content-Type': 'application/json'},
       body: JSON.stringify(body)
     }).then(response => {
       return response.json()
