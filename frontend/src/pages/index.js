@@ -86,7 +86,7 @@ Date: Tue, 20 Apr 2021 02:07:55 GMT
 Content-Type: application/json
 Digest: sha-256=X48E9qOokqqrvdts8nOJRJN3OWDUoyWxBf7kbu9DBPE=
 Content-Length: 18
-Signature-Input: sig=("@request-target" "host" "content-type" "content-length");created=1622749937;keyid="RSA (X.509 preloaded)"
+Signature-Input: sig=("@request-target" "host" "content-type" "content-length" "digest");created=1622749937;keyid="RSA (X.509 preloaded)"
 Signature: sig=:I5nyJmVtLdQWQV19QFCx93ADnMFE4Cw4Myt/xXUi0anu8YltKs5QwtiFUPXcjlrIVXHWbYu4cZWAoh4Wn8G2UTZNm6zx5v7jg5OunMc+ecKISSHBLkSbvWQL9+ytV38pAUxfvxaBIk6NG7NXjp3hywm9WAZUqmWYvpWcQ/gYsyqI2jR962HL1uc0p2sLgjz/oKp7zEAZYH2tJ4d76GgQrxR/QhiWGpnAnZI9m5xwwO1cnus5W6bjoRHkHI9O/EEUN0QNWvjSvjytaBKvxrRsmh24QzaibzwP7IVdBdCg4qy58nVS4KgBRDgUHrZLILvl5m39BU+B8x0LgA6fZ8/31w==:
 
 {"hello": "world"}`
