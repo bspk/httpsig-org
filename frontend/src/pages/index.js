@@ -13,8 +13,8 @@ import { Button, ButtonGroup, Tabs, Container, Section, Level, Form, Columns, Co
 
 //const api = 'https://y2dgwjj82j.execute-api.us-east-1.amazonaws.com/dev' // bspk test (legacy)
 //const api = 'https://w1w57e3ati.execute-api.us-east-1.amazonaws.com/dev' // bspk test
-const api = 'https://o52ky0nc31.execute-api.ca-central-1.amazonaws.com/dev' // secureKey install
-//const api = 'http://localhost:3000/dev'
+//const api = 'https://o52ky0nc31.execute-api.ca-central-1.amazonaws.com/dev' // secureKey install
+const api = 'http://localhost:3000/dev'
 
 class HttpSigForm extends React.Component {
   constructor(props) {
@@ -760,6 +760,7 @@ w0EkjqF7xB4FivAxzic30tMM4GF+hR6Dxh71Z50VGGdldkkDXZCnTNnoXQ==
                 <option value="ecdsa-p256-sha256" disabled={this.state.signingKeyType == 'shared'}>ECDSA</option>
                 <option value="hmac-sha256">HMAC</option>
                 <option value="rsa-v1_5-sha256" disabled={this.state.signingKeyType == 'shared'}>RSA 1.5</option>
+          <option value="ed25519-sha512" disabled={this.state.signingKeyType == 'shared'}>Ed25519</option>
                 <option value="jose" disabled={this.state.signingKeyType !== 'jwk'}>Use JWA value from Key</option>
       				</Form.Select>
       			</Form.Control>

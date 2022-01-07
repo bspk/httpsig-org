@@ -13,8 +13,8 @@
 
 service: backend
 # app and org for use with dashboard.serverless.com
-#app: your-app-name
-#org: your-org-name
+#app: httpsig-org
+#org: justinricher
 
 # You can pin your service to only deploy with a specific Serverless version
 # Check out our docs for more details
@@ -31,6 +31,7 @@ plugins:
 
 custom:
   pythonRequirements:
+    dockerImage: mlupin/docker-lambda:python3.9-build
     dockerizePip: non-linux
 
 # Create our resources with separate CloudFormation templates

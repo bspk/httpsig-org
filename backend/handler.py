@@ -11,7 +11,6 @@ from Cryptodome.Signature import pss
 from Cryptodome.Signature import pkcs1_15
 from Cryptodome.Signature import DSS
 from Cryptodome.Hash import SHA512
-from Cryptodome.Hash import SHA384
 from Cryptodome.Hash import SHA256
 from Cryptodome.Hash import HMAC
 from Cryptodome.PublicKey import RSA
@@ -20,6 +19,11 @@ from Cryptodome import Random
 from Cryptodome.IO import PEM
 from Cryptodome.IO import PKCS8
 from Cryptodome.Signature.pss import MGF1
+from Cryptodome.Util.asn1 import DerOctetString
+from Cryptodome.Util.asn1 import DerBitString
+from Cryptodome.Util.asn1 import DerSequence
+from nacl.signing import SigningKey
+from nacl.signing import VerifyKey
 
 import base64
 
@@ -381,6 +385,9 @@ def sign(event, context):
         signer.update(siginput.encode('utf-8'))
         
         signed = http_sfv.Item(signer.digest())
+    elif alg == 'ed25519-sha512':
+        h = SHA512.new(siginput.encode('utf-8'))
+        signed = http_sfv.Item(key.sign(h.digest()).signature)
     elif alg == 'jose':
         # we're doing JOSE algs based on the key value
         if (not 'alg' in jwk) or (jwk['alg'] == 'none'):
@@ -590,6 +597,9 @@ def verify(event, context):
             verifier.update(siginput.encode('utf-8'))
         
             verified = (verifier.digest() == signature.value)
+        elif alg == 'ed25519-sha512':
+            h = SHA512.new(siginput.encode('utf-8'))
+            verified = key.verify(h.digest(), signed.value)
         elif alg == 'jose':
             # we're doing JOSE algs based on the key value
             if (not 'alg' in jwk) or (jwk['alg'] == 'none'):
@@ -788,8 +798,16 @@ def parseKeyX509(signingKey):
                 #print(5)
                 
             except (ValueError, IndexError, TypeError):
-                key = None
-                #print(6)
+                
+                try:
+                    # edDSA Key
+                    der = DerOctetString()
+                    der.decode(PKCS8.unwrap(PEM.decode(signingKey)[0])[1])
+                    key = SigningKey(der.payload)
+                except (ValueError) as err:
+                    print(err)
+                    key = None
+                    #print(6)
                 
     except (ValueError, IndexError, TypeError) as err:
         #print(err)
@@ -815,9 +833,20 @@ def parseKeyX509(signingKey):
             key = ECC.import_key(signingKey)
             #print(13)
         except (ValueError, IndexError, TypeError) as err:
-            #print(err)
-            key = None
-            #print(10)
+            
+            try:
+                # edDSA key:
+                # sequence of ID and BitString
+                ds = DerSequence()
+                ds.decode(PEM.decode(signingKey)[0])
+                bs = DerBitString()
+                bs.decode(ds[1])
+                # the first byte of the bitstring is "0" for some reason??
+                key = VerifyKey(bs.payload[1:])
+            except (ValueError) as err:
+                print(err)
+                key = None
+                #print(10)
 
     #print(11)
     return key
