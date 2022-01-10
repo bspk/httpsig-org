@@ -11,7 +11,6 @@ from Cryptodome.Signature import pss
 from Cryptodome.Signature import pkcs1_15
 from Cryptodome.Signature import DSS
 from Cryptodome.Hash import SHA512
-from Cryptodome.Hash import SHA384
 from Cryptodome.Hash import SHA256
 from Cryptodome.Hash import HMAC
 from Cryptodome.PublicKey import RSA
@@ -20,6 +19,11 @@ from Cryptodome import Random
 from Cryptodome.IO import PEM
 from Cryptodome.IO import PKCS8
 from Cryptodome.Signature.pss import MGF1
+from Cryptodome.Util.asn1 import DerOctetString
+from Cryptodome.Util.asn1 import DerBitString
+from Cryptodome.Util.asn1 import DerSequence
+from nacl.signing import SigningKey
+from nacl.signing import VerifyKey
 
 import base64
 
@@ -57,7 +61,75 @@ def parse(event, context):
         },
         'body': json.dumps(response)
     }
-    
+
+structuredFields = {
+    'accept': 'list',
+    'accept-encoding': 'list',
+    'accept-language': 'list',
+    'accept-patch': 'list',
+    'accept-ranges': 'list',
+    'access-control-allow-credentials': 'item',
+    'access-control-allow-headers': 'list',
+    'access-control-allow-methods': 'list',
+    'access-control-allow-origin': 'item',
+    'access-control-expose-headers': 'list',
+    'access-control-max-age': 'item',
+    'access-control-request-headers': 'list',
+    'access-control-request-method': 'item',
+    'age': 'item',
+    'allow': 'list',
+    'alpn': 'list',
+    'alt-svc': 'dict',
+    'alt-used': 'item',
+    'cache-control': 'dict',
+    'connection': 'list',
+    'content-encoding': 'list',
+    'content-language': 'list',
+    'content-length': 'list',
+    'content-type': 'item',
+    'cross-origin-resource-policy': 'item',
+    'expect': 'item',
+    'expect-ct': 'dict',
+    'host': 'item',
+    'keep-alive': 'dict',
+    'origin': 'item',
+    'pragma': 'dict',
+    'prefer': 'dict',
+    'preference-applied': 'dict',
+    'retry-after': 'item',
+    'surrogate-control': 'dict',
+    'te': 'list',
+    'timing-allow-origin': 'list',
+    'trailer': 'list',
+    'transfer-encoding': 'list',
+    'vary': 'list',
+    'x-content-type-options': 'item',
+    'x-frame-options': 'item',
+    'x-xss-protection': 'list',
+    "cache-status": "list",
+    "proxy-status": "list",
+    "variant-key": "list",
+    "variants": "dict",
+    "signature": "dict",
+    "signature-input": "dict",
+    "priority": "dict",
+    "x-dictionary": "dict",
+    "x-list": "list",
+    "x-list-a": "list",
+    "x-list-b": "list",
+    "accept-ch": "list",
+    "example-list": "list",
+    "example-dict": "dict",
+    "example-integer": "item",
+    "example-decimal": "item",
+    "example-string": "item",
+    "example-token": "item",
+    "example-bytesequence": "item",
+    "example-boolean": "item",
+    "cdn-cache-control": "dict"
+}
+
+
 def parse_components(msg):
     p = HttpParser()
     p.execute(msg, len(msg))
@@ -72,32 +144,29 @@ def parse_components(msg):
                 'val': p.get_headers()[h] # Note: this normalizes the header value for us
             }
         )
-        # try to parse this as a dictionary, see if it works
-        try:
-            dic = http_sfv.Dictionary()
-            dic.parse(p.get_headers()[h].encode('utf-8'))
+        # see if this is a known structured field
+        if h and h.lower() in structuredFields:
+            if structuredFields[h.lower()] == 'dict':
+                sv = http_sfv.Dictionary()
+                sv.parse(p.get_headers()[h].encode('utf-8'))
             
-            for k in dic:
+                for k in sv:
+                    response['fields'].append(
+                        {
+                            'id': h.lower(),
+                            'key': k,
+                            'val': str(sv[k])
+                        }
+                    )
+            
                 response['fields'].append(
                     {
                         'id': h.lower(),
-                        'key': k,
-                        'val': str(dic[k])
+                        'sv': True,
+                        'val': str(sv)
                     }
                 )
-            
-            response['fields'].append(
-                {
-                    'id': h.lower(),
-                    'sv': True,
-                    'val': str(dic)
-                }
-            )
-        except ValueError:
-            # not a dictionary, not a problem
-
-            # try to parse this as a list, see if it works
-            try:
+            elif structuredFields[h.lower()] == 'list':
                 sv = http_sfv.List()
                 sv.parse(p.get_headers()[h].encode('utf-8'))
             
@@ -108,21 +177,17 @@ def parse_components(msg):
                         'val': str(sv)
                     }
                 )
-            except ValueError:
-                # try to parse this as an item, see if it works
-                try:
-                    sv = http_sfv.Item()
-                    sv.parse(p.get_headers()[h].encode('utf-8'))
-            
-                    response['fields'].append(
-                        {
-                            'id': h.lower(),
-                            'sv': True,
-                            'val': str(sv)
-                        }
-                    )
-                except ValueError:
-                    pass
+            elif structuredFields[h.lower()] == 'item':
+                sv = http_sfv.Item()
+                sv.parse(p.get_headers()[h].encode('utf-8'))
+        
+                response['fields'].append(
+                    {
+                        'id': h.lower(),
+                        'sv': True,
+                        'val': str(sv)
+                    }
+                )
 
     if 'signature-input' in p.get_headers():
         # existing signatures, parse the values
@@ -381,6 +446,9 @@ def sign(event, context):
         signer.update(siginput.encode('utf-8'))
         
         signed = http_sfv.Item(signer.digest())
+    elif alg == 'ed25519-sha512':
+        h = SHA512.new(siginput.encode('utf-8'))
+        signed = http_sfv.Item(key.sign(h.digest()).signature)
     elif alg == 'jose':
         # we're doing JOSE algs based on the key value
         if (not 'alg' in jwk) or (jwk['alg'] == 'none'):
@@ -590,6 +658,9 @@ def verify(event, context):
             verifier.update(siginput.encode('utf-8'))
         
             verified = (verifier.digest() == signature.value)
+        elif alg == 'ed25519-sha512':
+            h = SHA512.new(siginput.encode('utf-8'))
+            verified = key.verify(h.digest(), signed.value)
         elif alg == 'jose':
             # we're doing JOSE algs based on the key value
             if (not 'alg' in jwk) or (jwk['alg'] == 'none'):
@@ -788,8 +859,16 @@ def parseKeyX509(signingKey):
                 #print(5)
                 
             except (ValueError, IndexError, TypeError):
-                key = None
-                #print(6)
+                
+                try:
+                    # edDSA Key
+                    der = DerOctetString()
+                    der.decode(PKCS8.unwrap(PEM.decode(signingKey)[0])[1])
+                    key = SigningKey(der.payload)
+                except (ValueError) as err:
+                    print(err)
+                    key = None
+                    #print(6)
                 
     except (ValueError, IndexError, TypeError) as err:
         #print(err)
@@ -815,9 +894,20 @@ def parseKeyX509(signingKey):
             key = ECC.import_key(signingKey)
             #print(13)
         except (ValueError, IndexError, TypeError) as err:
-            #print(err)
-            key = None
-            #print(10)
+            
+            try:
+                # edDSA key:
+                # sequence of ID and BitString
+                ds = DerSequence()
+                ds.decode(PEM.decode(signingKey)[0])
+                bs = DerBitString()
+                bs.decode(ds[1])
+                # the first byte of the bitstring is "0" for some reason??
+                key = VerifyKey(bs.payload[1:])
+            except (ValueError) as err:
+                print(err)
+                key = None
+                #print(10)
 
     #print(11)
     return key
