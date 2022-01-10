@@ -12,7 +12,7 @@ import { faClock, faPlusSquare, faTrash } from '@fortawesome/fontawesome-free-so
 import { Button, ButtonGroup, Tabs, Container, Section, Level, Form, Columns, Content, Heading, Box, Icon, Tag } from 'react-bulma-components';
 
 //const api = 'https://y2dgwjj82j.execute-api.us-east-1.amazonaws.com/dev' // bspk test (legacy)
-//const api = 'https://w1w57e3ati.execute-api.us-east-1.amazonaws.com/dev' // bspk test
+//const api = 'https://grb8qjtvye.execute-api.us-east-1.amazonaws.com/dev' // bspk test
 //const api = 'https://o52ky0nc31.execute-api.ca-central-1.amazonaws.com/dev' // secureKey install
 const api = 'http://localhost:3000/dev'
 
@@ -457,6 +457,27 @@ w0EkjqF7xB4FivAxzic30tMM4GF+hR6Dxh71Z50VGGdldkkDXZCnTNnoXQ==
       signingKeyType: 'jwk'
     });
   }
+  
+  loadEdPrivate = (e) => {
+    this.setState({
+      signingKeyX509: `-----BEGIN PRIVATE KEY-----
+MC4CAQAwBQYDK2VwBCIEIJ+DYvh6SEqVTm50DFtMDoQikTmiCqirVv9mWG9qfSnF
+-----END PRIVATE KEY-----
+      `,
+      alg: 'ed25519-sha512',
+      signingKeyType: 'x509'
+    });
+  }
+
+  loadEdPublic = (e) => {
+    this.setState({
+      signingKeyX509: `-----BEGIN PUBLIC KEY-----
+MCowBQYDK2VwAyEAJrQLj5P/89iXES9+vFgrIy29clF9CC/oPPsw3c5D0bs=
+-----END PUBLIC KEY-----
+      `,
+      signingKeyType: 'x509'
+    });
+  }
 
   setSigningKeyType = (e) => {
     if (e.target.value === 'shared') {
@@ -622,6 +643,7 @@ w0EkjqF7xB4FivAxzic30tMM4GF+hR6Dxh71Z50VGGdldkkDXZCnTNnoXQ==
                 <option value="ecdsa-p256-sha256">ECDSA</option>
                 <option value="hmac-sha256">HMAC</option>
                 <option value="rsa-v1_5-sha256">RSA 1.5</option>
+                <option value="ed25519-sha512">Ed25519</option>
       				</Form.Select>
             </Form.Control>
           </Form.Field>
@@ -713,6 +735,9 @@ w0EkjqF7xB4FivAxzic30tMM4GF+hR6Dxh71Z50VGGdldkkDXZCnTNnoXQ==
               <Button onClick={this.loadRsaPssPrivate}>RSA Private</Button>
               <Button onClick={this.loadRsaPssPublic}>RSA Public</Button>
               <Button onClick={this.loadEccPrivate}>ECC Private</Button>
+              <Button onClick={this.loadEccPublic}>ECC Public</Button>
+              <Button onClick={this.loadEdPrivate}>Ed25519 Private</Button>
+              <Button onClick={this.loadEdPublic}>Ed25519 Public</Button>
           		<Form.Field>
           			<Form.Control>
       		        <Form.Textarea rows={10} spellCheck={false} onChange={this.setSigningKeyX509} value={this.state.signingKeyX509} />
