@@ -61,7 +61,75 @@ def parse(event, context):
         },
         'body': json.dumps(response)
     }
-    
+
+structuredFields = {
+    'accept': 'list',
+    'accept-encoding': 'list',
+    'accept-language': 'list',
+    'accept-patch': 'list',
+    'accept-ranges': 'list',
+    'access-control-allow-credentials': 'item',
+    'access-control-allow-headers': 'list',
+    'access-control-allow-methods': 'list',
+    'access-control-allow-origin': 'item',
+    'access-control-expose-headers': 'list',
+    'access-control-max-age': 'item',
+    'access-control-request-headers': 'list',
+    'access-control-request-method': 'item',
+    'age': 'item',
+    'allow': 'list',
+    'alpn': 'list',
+    'alt-svc': 'dict',
+    'alt-used': 'item',
+    'cache-control': 'dict',
+    'connection': 'list',
+    'content-encoding': 'list',
+    'content-language': 'list',
+    'content-length': 'list',
+    'content-type': 'item',
+    'cross-origin-resource-policy': 'item',
+    'expect': 'item',
+    'expect-ct': 'dict',
+    'host': 'item',
+    'keep-alive': 'dict',
+    'origin': 'item',
+    'pragma': 'dict',
+    'prefer': 'dict',
+    'preference-applied': 'dict',
+    'retry-after': 'item',
+    'surrogate-control': 'dict',
+    'te': 'list',
+    'timing-allow-origin': 'list',
+    'trailer': 'list',
+    'transfer-encoding': 'list',
+    'vary': 'list',
+    'x-content-type-options': 'item',
+    'x-frame-options': 'item',
+    'x-xss-protection': 'list',
+    "cache-status": "list",
+    "proxy-status": "list",
+    "variant-key": "list",
+    "variants": "dict",
+    "signature": "dict",
+    "signature-input": "dict",
+    "priority": "dict",
+    "x-dictionary": "dict",
+    "x-list": "list",
+    "x-list-a": "list",
+    "x-list-b": "list",
+    "accept-ch": "list",
+    "example-list": "list",
+    "example-dict": "dict",
+    "example-integer": "item",
+    "example-decimal": "item",
+    "example-string": "item",
+    "example-token": "item",
+    "example-bytesequence": "item",
+    "example-boolean": "item",
+    "cdn-cache-control": "dict"
+}
+
+
 def parse_components(msg):
     p = HttpParser()
     p.execute(msg, len(msg))
@@ -76,32 +144,29 @@ def parse_components(msg):
                 'val': p.get_headers()[h] # Note: this normalizes the header value for us
             }
         )
-        # try to parse this as a dictionary, see if it works
-        try:
-            dic = http_sfv.Dictionary()
-            dic.parse(p.get_headers()[h].encode('utf-8'))
+        # see if this is a known structured field
+        if h and h.lower() in structuredFields:
+            if structuredFields[h.lower()] == 'dict':
+                sv = http_sfv.Dictionary()
+                sv.parse(p.get_headers()[h].encode('utf-8'))
             
-            for k in dic:
+                for k in sv:
+                    response['fields'].append(
+                        {
+                            'id': h.lower(),
+                            'key': k,
+                            'val': str(sv[k])
+                        }
+                    )
+            
                 response['fields'].append(
                     {
                         'id': h.lower(),
-                        'key': k,
-                        'val': str(dic[k])
+                        'sv': True,
+                        'val': str(sv)
                     }
                 )
-            
-            response['fields'].append(
-                {
-                    'id': h.lower(),
-                    'sv': True,
-                    'val': str(dic)
-                }
-            )
-        except ValueError:
-            # not a dictionary, not a problem
-
-            # try to parse this as a list, see if it works
-            try:
+            elif structuredFields[h.lower()] == 'list':
                 sv = http_sfv.List()
                 sv.parse(p.get_headers()[h].encode('utf-8'))
             
@@ -112,21 +177,17 @@ def parse_components(msg):
                         'val': str(sv)
                     }
                 )
-            except ValueError:
-                # try to parse this as an item, see if it works
-                try:
-                    sv = http_sfv.Item()
-                    sv.parse(p.get_headers()[h].encode('utf-8'))
-            
-                    response['fields'].append(
-                        {
-                            'id': h.lower(),
-                            'sv': True,
-                            'val': str(sv)
-                        }
-                    )
-                except ValueError:
-                    pass
+            elif structuredFields[h.lower()] == 'item':
+                sv = http_sfv.Item()
+                sv.parse(p.get_headers()[h].encode('utf-8'))
+        
+                response['fields'].append(
+                    {
+                        'id': h.lower(),
+                        'sv': True,
+                        'val': str(sv)
+                    }
+                )
 
     if 'signature-input' in p.get_headers():
         # existing signatures, parse the values
