@@ -11,10 +11,9 @@ import { faClock, faPlusSquare, faTrash } from '@fortawesome/fontawesome-free-so
 
 import { Button, ButtonGroup, Tabs, Container, Section, Level, Form, Columns, Content, Heading, Box, Icon, Tag } from 'react-bulma-components';
 
-//const api = 'https://y2dgwjj82j.execute-api.us-east-1.amazonaws.com/dev' // bspk test (legacy)
 //const api = 'https://grb8qjtvye.execute-api.us-east-1.amazonaws.com/dev' // bspk test
-//const api = 'https://o52ky0nc31.execute-api.ca-central-1.amazonaws.com/dev' // secureKey install
-const api = 'http://localhost:3000/dev'
+const api = 'https://o52ky0nc31.execute-api.ca-central-1.amazonaws.com/dev' // secureKey install
+//const api = 'http://localhost:3000/dev'
 
 class HttpSigForm extends React.Component {
   constructor(props) {
@@ -42,7 +41,8 @@ class HttpSigForm extends React.Component {
       label: 'sig',
       signatureParams: undefined,
       verifySignature: undefined,
-      signatureVerified: undefined
+      signatureVerified: undefined,
+      stage: 'input' // can be: input, params, material, output
     };
   }
 
@@ -131,9 +131,10 @@ Signature: sig=:hFXQivWrXlTbzYLDs0yWxo+4/REu/OMEysVmK+OMidjLZ8nQXq/LrJPrFdEwNBV/
       this.setState({
         availableComponents: availableComponents,
         coveredComponents: [],
-        inputSignatures: data['inputSignatures']
+        inputSignatures: data['inputSignatures'],
+        stage: 'params'
       }, () => {
-        document.getElementById('params').scrollIntoView({behavior: 'smooth'});
+        document.getElementById('stages').scrollIntoView({behavior: 'smooth'});
       });
     });
   }
@@ -264,9 +265,10 @@ Signature: sig=:hFXQivWrXlTbzYLDs0yWxo+4/REu/OMEysVmK+OMidjLZ8nQXq/LrJPrFdEwNBV/
     }).then(data => {
       this.setState({
         signatureInput: data['signatureInput'],
-        signatureParams: data['signatureParams']
+        signatureParams: data['signatureParams'],
+        stage: 'material'
       }, () => {
-        document.getElementById('material').scrollIntoView({behavior: 'smooth'});
+        document.getElementById('stages').scrollIntoView({behavior: 'smooth'});
       });
     });
   }
@@ -540,9 +542,10 @@ MCowBQYDK2VwAyEAJrQLj5P/89iXES9+vFgrIy29clF9CC/oPPsw3c5D0bs=
     }).then(data => {
       this.setState({
         signatureOutput: data['signatureOutput'],
-        signatureHeaders: data['headers']
+        signatureHeaders: data['headers'],
+        stage: 'output'
       }, () => {
-        document.getElementById('output').scrollIntoView({behavior: 'smooth'});
+        document.getElementById('stages').scrollIntoView({behavior: 'smooth'});
       });
     });
   }
@@ -589,256 +592,296 @@ MCowBQYDK2VwAyEAJrQLj5P/89iXES9+vFgrIy29clF9CC/oPPsw3c5D0bs=
       return response.json()
     }).then(data => {
       this.setState({
-        signatureVerified: data['signatureVerified']
+        signatureVerified: data['signatureVerified'],
+        stage: 'output'
       }, () => {
-        document.getElementById('output').scrollIntoView({behavior: 'smooth'});
+        document.getElementById('stages').scrollIntoView({behavior: 'smooth'});
       });
+    });
+  }
+  
+  setStage = (stage) => (e) => {
+    e.preventDefault();
+    this.setState({
+      stage: stage
     });
   }
 
   render = () => {
     return (
       <>
-      <Box id="input">
-        <Heading>Input</Heading>
-        <Section>
-      		<Form.Label>HTTP Message</Form.Label>
-          <Button onClick={this.loadExampleRequest}>Example Request</Button>
-          <Button onClick={this.loadExampleResponse}>Example Response</Button>
-          <Button onClick={this.loadExampleSignedRequest}>Example Signed Request</Button>
-          <Button onClick={this.loadExampleSignedResponse}>Example Signed Response</Button>
-      		<Form.Field>
-      			<Form.Control>
-  		        <Form.Textarea rows={10} spellCheck={false} onChange={this.setHttpMsg} value={this.state.httpMsg} />
-      			</Form.Control>
-      		</Form.Field>
-        </Section>
-        <Section>
-          <Button onClick={this.parseHttpMsg}>Parse</Button>
-        </Section>
-      </Box>
-      <Box id="params">
-        <Heading>Signature Parameters</Heading>
-        <Section>
-          {this.state.inputSignatures && (
+      <Heading id="stages">
+      <Button 
+        color={this.state.stage === 'input' ? 'primary' : 'info'}
+        inverted={this.state.stage !== 'input'}
+        onClick={this.setStage('input')}>Input</Button>
+      &raquo;
+      <Button 
+        color={this.state.stage === 'params' ? 'primary' : 
+          this.state.stage === 'input' ? 'danger' : 'info'}
+        inverted={this.state.stage !== 'params'}
+        onClick={this.setStage('params')}>Parameters</Button>
+      &raquo;
+      <Button 
+        color={this.state.stage === 'material' ? 'primary'  : 
+          (this.state.stage === 'input' || this.state.stage ==='params') ? 'danger' : 'info'}
+        inverted={this.state.stage !== 'material'}
+        onClick={this.setStage('material')}>Material</Button>
+      &raquo;
+      <Button 
+        color={this.state.stage === 'output' ? 'primary' : 
+          (this.state.stage === 'input' || this.state.stage ==='params' || this.state.stage ==='material') ? 'danger' : 'info'}
+        inverted={this.state.stage !== 'output'}
+        onClick={this.setStage('output')}>Output</Button>
+      </Heading>
+      {this.state.stage === 'input' && (
+        <Box id="input">
+          <Heading>Input</Heading>
+          <Section>
+        		<Form.Label>HTTP Message</Form.Label>
+            <Button onClick={this.loadExampleRequest}>Example Request</Button>
+            <Button onClick={this.loadExampleResponse}>Example Response</Button>
+            <Button onClick={this.loadExampleSignedRequest}>Example Signed Request</Button>
+            <Button onClick={this.loadExampleSignedResponse}>Example Signed Response</Button>
+        		<Form.Field>
+        			<Form.Control>
+    		        <Form.Textarea rows={10} spellCheck={false} onChange={this.setHttpMsg} value={this.state.httpMsg} />
+        			</Form.Control>
+        		</Form.Field>
+          </Section>
+          <Section>
+            <Button onClick={this.parseHttpMsg}>Parse</Button>
+          </Section>
+        </Box>
+      )}
+      {this.state.stage === 'params' && (
+        <Box id="params">
+          <Heading>Signature Parameters</Heading>
+          <Section>
+            {this.state.inputSignatures && (
+              <Form.Field>
+                <Form.Label>Use parameters from existing signature</Form.Label>
+                <Form.Control>
+                  <Form.Select value={this.state.existingSignature} onChange={this.selectExistingSignature}>
+                    <option value="">None</option>
+                      {Object.entries(this.state.inputSignatures).map(([k, v], i) => (
+                        <option value={k}>{k}</option>
+                      ))}
+                  </Form.Select>
+                </Form.Control>
+              </Form.Field>
+            )}
+            <CoveredComponents coveredComponents={this.state.coveredComponents} availableComponents={this.state.availableComponents} setCoveredComponents={this.setCoveredComponents} />
             <Form.Field>
-              <Form.Label>Use parameters from existing signature</Form.Label>
+              <Form.Label>Explicit Signature Algorithm</Form.Label>
               <Form.Control>
-                <Form.Select value={this.state.existingSignature} onChange={this.selectExistingSignature}>
-                  <option value="">None</option>
+        				<Form.Select onChange={this.setAlgParam} value={this.state.algParam}>
+                  <option value="">Not Speficied</option>
+                  <option value="rsa-pss-sha512">RSA PSS</option>
+                  <option value="ecdsa-p256-sha256">ECDSA</option>
+                  <option value="hmac-sha256">HMAC</option>
+                  <option value="rsa-v1_5-sha256">RSA 1.5</option>
+                  <option value="ed25519-sha512">Ed25519</option>
+        				</Form.Select>
+              </Form.Control>
+            </Form.Field>
+            <Form.Field>
+              <Form.Label>Key ID</Form.Label>
+              <Form.Control>
+        				<Form.Input onChange={this.setKeyid} value={this.state.keyid ? this.state.keyid : ''} />
+              </Form.Control>
+            </Form.Field>
+            <Form.Label>Creation Time</Form.Label>
+            <Form.Field kind="addons">
+              <Form.Control>
+        				<Form.Input onChange={this.setCreated} value={this.state.created ? String(this.state.created) : ''} />
+                {this.state.created && (
+                  <Form.Help>
+                    <Moment>{this.state.created * 1000}</Moment>
+                  </Form.Help>
+                )}
+              </Form.Control>
+              <Form.Control>
+                <Button onClick={this.setCreatedToNow}>
+                  <Icon>
+                    <FontAwesomeIcon icon={faClock} />
+                  </Icon>
+                </Button>
+              </Form.Control>
+              <Form.Control>
+                <Button onClick={this.clearCreated}>
+                  <Icon>
+                    <FontAwesomeIcon icon={faTrash} />
+                  </Icon>
+                </Button>
+              </Form.Control>
+            </Form.Field>
+            <Form.Label>Expiration Time</Form.Label>
+            <Form.Field kind="addons">
+              <Form.Control>
+        				<Form.Input onChange={this.setExpires} value={this.state.expires ? String(this.state.expires) : ''} />
+                {this.state.expires && (
+                  <Form.Help>
+                    <Moment>{this.state.expires * 1000}</Moment>
+                  </Form.Help>
+                )}
+              </Form.Control>
+              <Form.Control>
+                <Button onClick={this.addTimeToExpires}>
+                  <Icon>
+                    <FontAwesomeIcon icon={faPlusSquare} />
+                  </Icon>
+                </Button>
+              </Form.Control>
+              <Form.Control>
+                <Button onClick={this.clearExpires}>
+                  <Icon>
+                    <FontAwesomeIcon icon={faTrash} />
+                  </Icon>
+                </Button>
+              </Form.Control>
+            </Form.Field>
+          </Section>
+          <Section>
+            <Button onClick={this.generateSignatureInput}>Generate Signature Input</Button>
+          </Section>
+        </Box>
+      )}
+      {this.state.stage === 'material' && (
+        <Box id="material">
+          <Heading>Signature Material</Heading>
+          <Section>
+        		<Form.Label>Signature Input String</Form.Label>
+        		<Form.Field>
+        			<Form.Control>
+    		        <Form.Textarea rows={10} spellCheck={false} onChange={this.setSignatureInput} value={this.state.signatureInput ? this.state.signatureInput : ''} />
+        			</Form.Control>
+        		</Form.Field>
+          </Section>
+          <Section>
+        		<Form.Field>
+        			<Form.Label>Key Format</Form.Label>
+        			<Form.Control>
+                <Form.Select onChange={this.setSigningKeyType} value={this.state.signingKeyType ? this.state.signingKeyType : ''}>
+                  <option value="x509">X.509</option>
+                  <option value="jwk">JWK</option>
+                  <option value="shared">Shared</option>
+        				</Form.Select>
+        			</Form.Control>
+        		</Form.Field>
+        		<Form.Label>Key material</Form.Label>
+            {this.state.signingKeyType == 'x509' && (
+              <>
+                <Button onClick={this.loadRsaPssPrivate}>RSA Private</Button>
+                <Button onClick={this.loadRsaPssPublic}>RSA Public</Button>
+                <Button onClick={this.loadEccPrivate}>ECC Private</Button>
+                <Button onClick={this.loadEccPublic}>ECC Public</Button>
+                <Button onClick={this.loadEdPrivate}>Ed25519 Private</Button>
+                <Button onClick={this.loadEdPublic}>Ed25519 Public</Button>
+            		<Form.Field>
+            			<Form.Control>
+        		        <Form.Textarea rows={10} spellCheck={false} onChange={this.setSigningKeyX509} value={this.state.signingKeyX509} />
+            			</Form.Control>
+            		</Form.Field>
+              </>
+            )}
+            {this.state.signingKeyType == 'jwk' && (
+              <>
+                <Button onClick={this.loadRsaPrivateJwk}>RSA Private</Button>
+                <Button onClick={this.loadRsaPublicJwk}>RSA Public</Button>
+                <Button onClick={this.loadEccPrivateJwk}>ECC Private</Button>
+                <Button onClick={this.loadSharedJwk}>Shared</Button>
+            		<Form.Field>
+            			<Form.Control>
+        		        <Form.Textarea rows={10} spellCheck={false} onChange={this.setSigningKeyJwk} value={this.state.signingKeyJwk} />
+            			</Form.Control>
+            		</Form.Field>
+              </>
+            )}
+            {this.state.signingKeyType == 'shared' && (
+              <>
+            		<Form.Field>
+            			<Form.Control>
+        		        <Form.Textarea rows={10} spellCheck={false} onChange={this.setSigningKeyShared} value={this.state.signingKeyShared} />
+            			</Form.Control>
+            		</Form.Field>
+              </>
+            )}
+          </Section>
+          <Section>
+            <Form.Field>
+              <Form.Label>Label</Form.Label>
+              <Form.Control>
+        				<Form.Input onChange={this.setLabel} value={this.state.label} />
+              </Form.Control>
+            </Form.Field>
+          </Section>
+          <Section>
+        		<Form.Field>
+        			<Form.Label>Signature Algorithm</Form.Label>
+        			<Form.Control>
+                <Form.Select onChange={this.setAlg} disabled={this.state.algParam !== ''} value={this.state.algParam ? this.state.algParam : this.state.alg}>
+                  <option value="rsa-pss-sha512" disabled={this.state.signingKeyType == 'shared'}>RSA PSS</option>
+                  <option value="ecdsa-p256-sha256" disabled={this.state.signingKeyType == 'shared'}>ECDSA</option>
+                  <option value="hmac-sha256">HMAC</option>
+                  <option value="rsa-v1_5-sha256" disabled={this.state.signingKeyType == 'shared'}>RSA 1.5</option>
+            <option value="ed25519-sha512" disabled={this.state.signingKeyType == 'shared'}>Ed25519</option>
+                  <option value="jose" disabled={this.state.signingKeyType !== 'jwk'}>Use JWA value from Key</option>
+        				</Form.Select>
+        			</Form.Control>
+        		</Form.Field>
+          </Section>
+          <Section>
+            <Button onClick={this.signInput}>Sign Signature Input</Button>
+          </Section>
+          <Section>
+            {this.state.inputSignatures && (
+              <Form.Field>
+                <Form.Control>
+                  <Form.Select value={this.state.verifySignature} onChange={this.selectVerifySignature}>
+                    <option value="">--</option>
                     {Object.entries(this.state.inputSignatures).map(([k, v], i) => (
                       <option value={k}>{k}</option>
                     ))}
-                </Form.Select>
-              </Form.Control>
-            </Form.Field>
+                  </Form.Select>
+                  <Button onClick={this.verifySignature}>Verify Signature</Button>
+                </Form.Control>
+              </Form.Field>
+            )}
+          </Section>
+        </Box>
+      )}
+      {this.state.stage === 'output' && (
+        <Box id="output">
+          <Heading>Output</Heading>
+          {this.state.signatureVerified !== undefined && (
+          <Section>
+            {this.state.signatureVerified && (
+              <Tag size="large" className="is-fullwidth" color="success">Signature Verified Successfully</Tag>
+            )}
+            {!this.state.signatureVerified && (
+              <Tag size="large" className="is-fullwidth" color="danger">Signature Verification Failed</Tag>
+            )}
+          </Section>
           )}
-          <CoveredComponents coveredComponents={this.state.coveredComponents} availableComponents={this.state.availableComponents} setCoveredComponents={this.setCoveredComponents} />
-          <Form.Field>
-            <Form.Label>Explicit Signature Algorithm</Form.Label>
-            <Form.Control>
-      				<Form.Select onChange={this.setAlgParam} value={this.state.algParam}>
-                <option value="">Not Speficied</option>
-                <option value="rsa-pss-sha512">RSA PSS</option>
-                <option value="ecdsa-p256-sha256">ECDSA</option>
-                <option value="hmac-sha256">HMAC</option>
-                <option value="rsa-v1_5-sha256">RSA 1.5</option>
-                <option value="ed25519-sha512">Ed25519</option>
-      				</Form.Select>
-            </Form.Control>
-          </Form.Field>
-          <Form.Field>
-            <Form.Label>Key ID</Form.Label>
-            <Form.Control>
-      				<Form.Input onChange={this.setKeyid} value={this.state.keyid ? this.state.keyid : ''} />
-            </Form.Control>
-          </Form.Field>
-          <Form.Label>Creation Time</Form.Label>
-          <Form.Field kind="addons">
-            <Form.Control>
-      				<Form.Input onChange={this.setCreated} value={this.state.created ? String(this.state.created) : ''} />
-              {this.state.created && (
-                <Form.Help>
-                  <Moment>{this.state.created * 1000}</Moment>
-                </Form.Help>
-              )}
-            </Form.Control>
-            <Form.Control>
-              <Button onClick={this.setCreatedToNow}>
-                <Icon>
-                  <FontAwesomeIcon icon={faClock} />
-                </Icon>
-              </Button>
-            </Form.Control>
-            <Form.Control>
-              <Button onClick={this.clearCreated}>
-                <Icon>
-                  <FontAwesomeIcon icon={faTrash} />
-                </Icon>
-              </Button>
-            </Form.Control>
-          </Form.Field>
-          <Form.Label>Expiration Time</Form.Label>
-          <Form.Field kind="addons">
-            <Form.Control>
-      				<Form.Input onChange={this.setExpires} value={this.state.expires ? String(this.state.expires) : ''} />
-              {this.state.expires && (
-                <Form.Help>
-                  <Moment>{this.state.expires * 1000}</Moment>
-                </Form.Help>
-              )}
-            </Form.Control>
-            <Form.Control>
-              <Button onClick={this.addTimeToExpires}>
-                <Icon>
-                  <FontAwesomeIcon icon={faPlusSquare} />
-                </Icon>
-              </Button>
-            </Form.Control>
-            <Form.Control>
-              <Button onClick={this.clearExpires}>
-                <Icon>
-                  <FontAwesomeIcon icon={faTrash} />
-                </Icon>
-              </Button>
-            </Form.Control>
-          </Form.Field>
-        </Section>
-        <Section>
-          <Button onClick={this.generateSignatureInput}>Generate Signature Input</Button>
-        </Section>
-      </Box>
-      <Box id="material">
-        <Heading>Signature Material</Heading>
-        <Section>
-      		<Form.Label>Signature Input String</Form.Label>
-      		<Form.Field>
-      			<Form.Control>
-  		        <Form.Textarea rows={10} spellCheck={false} onChange={this.setSignatureInput} value={this.state.signatureInput ? this.state.signatureInput : ''} />
-      			</Form.Control>
-      		</Form.Field>
-        </Section>
-        <Section>
-      		<Form.Field>
-      			<Form.Label>Key Format</Form.Label>
-      			<Form.Control>
-              <Form.Select onChange={this.setSigningKeyType} value={this.state.signingKeyType ? this.state.signingKeyType : ''}>
-                <option value="x509">X.509</option>
-                <option value="jwk">JWK</option>
-                <option value="shared">Shared</option>
-      				</Form.Select>
-      			</Form.Control>
-      		</Form.Field>
-      		<Form.Label>Key material</Form.Label>
-          {this.state.signingKeyType == 'x509' && (
-            <>
-              <Button onClick={this.loadRsaPssPrivate}>RSA Private</Button>
-              <Button onClick={this.loadRsaPssPublic}>RSA Public</Button>
-              <Button onClick={this.loadEccPrivate}>ECC Private</Button>
-              <Button onClick={this.loadEccPublic}>ECC Public</Button>
-              <Button onClick={this.loadEdPrivate}>Ed25519 Private</Button>
-              <Button onClick={this.loadEdPublic}>Ed25519 Public</Button>
-          		<Form.Field>
-          			<Form.Control>
-      		        <Form.Textarea rows={10} spellCheck={false} onChange={this.setSigningKeyX509} value={this.state.signingKeyX509} />
-          			</Form.Control>
-          		</Form.Field>
-            </>
-          )}
-          {this.state.signingKeyType == 'jwk' && (
-            <>
-              <Button onClick={this.loadRsaPrivateJwk}>RSA Private</Button>
-              <Button onClick={this.loadRsaPublicJwk}>RSA Public</Button>
-              <Button onClick={this.loadEccPrivateJwk}>ECC Private</Button>
-              <Button onClick={this.loadSharedJwk}>Shared</Button>
-          		<Form.Field>
-          			<Form.Control>
-      		        <Form.Textarea rows={10} spellCheck={false} onChange={this.setSigningKeyJwk} value={this.state.signingKeyJwk} />
-          			</Form.Control>
-          		</Form.Field>
-            </>
-          )}
-          {this.state.signingKeyType == 'shared' && (
-            <>
-          		<Form.Field>
-          			<Form.Control>
-      		        <Form.Textarea rows={10} spellCheck={false} onChange={this.setSigningKeyShared} value={this.state.signingKeyShared} />
-          			</Form.Control>
-          		</Form.Field>
-            </>
-          )}
-        </Section>
-        <Section>
-          <Form.Field>
-            <Form.Label>Label</Form.Label>
-            <Form.Control>
-      				<Form.Input onChange={this.setLabel} value={this.state.label} />
-            </Form.Control>
-          </Form.Field>
-        </Section>
-        <Section>
-      		<Form.Field>
-      			<Form.Label>Signature Algorithm</Form.Label>
-      			<Form.Control>
-              <Form.Select onChange={this.setAlg} disabled={this.state.algParam !== ''} value={this.state.algParam ? this.state.algParam : this.state.alg}>
-                <option value="rsa-pss-sha512" disabled={this.state.signingKeyType == 'shared'}>RSA PSS</option>
-                <option value="ecdsa-p256-sha256" disabled={this.state.signingKeyType == 'shared'}>ECDSA</option>
-                <option value="hmac-sha256">HMAC</option>
-                <option value="rsa-v1_5-sha256" disabled={this.state.signingKeyType == 'shared'}>RSA 1.5</option>
-          <option value="ed25519-sha512" disabled={this.state.signingKeyType == 'shared'}>Ed25519</option>
-                <option value="jose" disabled={this.state.signingKeyType !== 'jwk'}>Use JWA value from Key</option>
-      				</Form.Select>
-      			</Form.Control>
-      		</Form.Field>
-        </Section>
-        <Section>
-          <Button onClick={this.signInput}>Sign Signature Input</Button>
-        </Section>
-        <Section>
-          {this.state.inputSignatures && (
-            <Form.Field>
-              <Form.Control>
-                <Form.Select value={this.state.verifySignature} onChange={this.selectVerifySignature}>
-                  <option value="">--</option>
-                  {Object.entries(this.state.inputSignatures).map(([k, v], i) => (
-                    <option value={k}>{k}</option>
-                  ))}
-                </Form.Select>
-                <Button onClick={this.verifySignature}>Verify Signature</Button>
-              </Form.Control>
-            </Form.Field>
-          )}
-        </Section>
-      </Box>
-      <Box id="output">
-        <Heading>Output</Heading>
-        {this.state.signatureVerified !== undefined && (
-        <Section>
-          {this.state.signatureVerified && (
-            <Tag size="large" className="is-fullwidth" color="success">Signature Verified Successfully</Tag>
-          )}
-          {!this.state.signatureVerified && (
-            <Tag size="large" className="is-fullwidth" color="danger">Signature Verification Failed</Tag>
-          )}
-        </Section>
-        )}
-        <Section>
-      		<Form.Label>Signature Value (in Base64)</Form.Label>
-      		<Form.Field>
-      			<Form.Control>
-  		        <Form.Textarea rows={10} spellCheck={false} onChange={this.setSignatureOutput} value={this.state.signatureOutput} />
-      			</Form.Control>
-      		</Form.Field>
-        </Section>
-        <Section>
-      		<Form.Label>HTTP Message Signature Headers</Form.Label>
-      		<Form.Field>
-      			<Form.Control>
-  		        <Form.Textarea rows={10} spellCheck={false} onChange={this.setSignatureHeaders} value={this.state.signatureHeaders} />
-      			</Form.Control>
-      		</Form.Field>
-        </Section>
-      </Box>
+          <Section>
+        		<Form.Label>Signature Value (in Base64)</Form.Label>
+        		<Form.Field>
+        			<Form.Control>
+    		        <Form.Textarea rows={10} spellCheck={false} onChange={this.setSignatureOutput} value={this.state.signatureOutput} />
+        			</Form.Control>
+        		</Form.Field>
+          </Section>
+          <Section>
+        		<Form.Label>HTTP Message Signature Headers</Form.Label>
+        		<Form.Field>
+        			<Form.Control>
+    		        <Form.Textarea rows={10} spellCheck={false} onChange={this.setSignatureHeaders} value={this.state.signatureHeaders} />
+        			</Form.Control>
+        		</Form.Field>
+          </Section>
+        </Box>
+      )}
       </>
     );
   }
@@ -867,7 +910,6 @@ const CoveredComponents = ({...props}) =>
   ))}
       </>
 );
-
 
 const IndexPage = () => <Layout>
   <HttpSigForm />
