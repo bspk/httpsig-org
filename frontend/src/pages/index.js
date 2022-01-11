@@ -12,8 +12,8 @@ import { faClock, faPlusSquare, faTrash } from '@fortawesome/fontawesome-free-so
 import { Button, ButtonGroup, Tabs, Container, Section, Level, Form, Columns, Content, Heading, Box, Icon, Tag } from 'react-bulma-components';
 
 //const api = 'https://grb8qjtvye.execute-api.us-east-1.amazonaws.com/dev' // bspk test
-const api = 'https://o52ky0nc31.execute-api.ca-central-1.amazonaws.com/dev' // secureKey install
-//const api = 'http://localhost:3000/dev'
+//const api = 'https://o52ky0nc31.execute-api.ca-central-1.amazonaws.com/dev' // secureKey install
+const api = 'http://localhost:3000/dev'
 
 class HttpSigForm extends React.Component {
   constructor(props) {
@@ -22,7 +22,6 @@ class HttpSigForm extends React.Component {
       httpMsg: '',
       availableComponents: [],
       coveredComponents: [],
-      signatureInput: '',
       algParam: '',
       alg: '',
       keyid: undefined,
@@ -86,9 +85,8 @@ Date: Tue, 20 Apr 2021 02:07:55 GMT
 Content-Type: application/json
 Digest: sha-256=X48E9qOokqqrvdts8nOJRJN3OWDUoyWxBf7kbu9DBPE=
 Content-Length: 18
-Signature-Input: sig=("@request-target" "host" "content-type" "content-length");created=1622749937;keyid="RSA (X.509 preloaded)"
-Signature: sig=:I5nyJmVtLdQWQV19QFCx93ADnMFE4Cw4Myt/xXUi0anu8YltKs5QwtiFUPXcjlrIVXHWbYu4cZWAoh4Wn8G2UTZNm6zx5v7jg5OunMc+ecKISSHBLkSbvWQL9+ytV38pAUxfvxaBIk6NG7NXjp3hywm9WAZUqmWYvpWcQ/gYsyqI2jR962HL1uc0p2sLgjz/oKp7zEAZYH2tJ4d76GgQrxR/QhiWGpnAnZI9m5xwwO1cnus5W6bjoRHkHI9O/EEUN0QNWvjSvjytaBKvxrRsmh24QzaibzwP7IVdBdCg4qy58nVS4KgBRDgUHrZLILvl5m39BU+B8x0LgA6fZ8/31w==:
-
+Signature-Input: sig=("@request-target" "@authority" "content-type" "digest" "content-length");created=1622749937;keyid="RSA (X.509 preloaded)";alg="rsa-pss-sha512"
+Signature: sig=:e996CBj1SsBZkw6p3Ps4HWUSCUJjjsh1JrOf1vUes+PSMFf5K0rMlI69cGGaByql4EjFcJGQELoNqZFLuwXWokTT6tl/WPcYieE4XSZukyAqLjvN59m9vznOY2o4TmZPhDEyhUPzFp9guLPjxptpoFUNNNUfhjgT0dBPl2YTE1DC2GBjr805864EbrDoEoTNz8vt7LN7XHvDWnDfL4F6ELgl8RcDR94aT0XksI/qXlRk/VefIc89wGekkkWGlzzcn3V9SBplMz1Q4fGkaRuu7T4nppTfA1gdhEcSsfa6YMkUY/CpJpjtIh1KdJVFU4YYseHAoZhf8Fw/RqKd3TmJcg==:
 {"hello": "world"}`
     });
   }
@@ -100,9 +98,8 @@ Date: Tue, 20 Apr 2021 02:07:56 GMT
 Content-Type: application/json
 Digest: sha-256=X48E9qOokqqrvdts8nOJRJN3OWDUoyWxBf7kbu9DBPE=
 Content-Length: 18
-Signature-Input: sig=("@status-code" "content-type" "content-length" "digest");created=1622749937;keyid="RSA (X.509 preloaded)"
-Signature: sig=:hFXQivWrXlTbzYLDs0yWxo+4/REu/OMEysVmK+OMidjLZ8nQXq/LrJPrFdEwNBV/H3193LoXw1PaXlsP5noiM+R7hGKXJqYWb42MLIA6J7GXoeO2NPRlFvJNidAb85WjeXhi+E/6avFeY8jsb+EhHmbLYcjZwTjVyjZCHW671VG3/BWWmQMXA+xdENVuY81N9ZQxrHtX7ajDfxY9ulZxndaquJ/xkNVeW2KLvH8uff6SRuYg9lcacJrLUmN93xyOVBtZg7/5Ta9o+GCDXAiQL1bT1uVZF4tAkTLrctQN5Nk8AC9+CCe29vuT3tl5CGdmU5SXKVvSYNxvJV4xIgq8GA==:
-
+Signature-Input: sig=("digest" "content-type" "content-length" "@status");created=1622749937;keyid="RSA (X.509 preloaded)";alg="rsa-pss-sha512"
+Signature: sig=:XCMHw7lQowZE+WhZA4kEN8xSfMv1DwcYZfUw2Jzd48Vizacx0aInMmK0r7WxDJh49l1gmRozKKa1OP8W0+sDGI+N+/5tfJrYa3dOBRN1jv275jFiN2P7RehiQF0WagbYRUd5Dugpr9CUiTL0voq4WuvzGvP6rPUQtXvOIqLstEueyQRzir0rDDMw+NcpivpB65JZ4EEPw3dJRZNLB7WwRQkak4upWAbLPdm7gPa7MrbX32XHhGVj4xgPLIwVfSgZSbNOvwTw5ULM8Uy1exa/TwgQ9M4EcaQjrk4CQkeKFl6oyf3nk/8XbgJAAK4+uhwivLFeiTy0p2BWzcZiCfZOJw==:
 {"hello": "world"}`
     });
   }
@@ -132,6 +129,7 @@ Signature: sig=:hFXQivWrXlTbzYLDs0yWxo+4/REu/OMEysVmK+OMidjLZ8nQXq/LrJPrFdEwNBV/
         availableComponents: availableComponents,
         coveredComponents: [],
         inputSignatures: data['inputSignatures'],
+        existingSignature: undefined,
         stage: 'params'
       }, () => {
         document.getElementById('stages').scrollIntoView({behavior: 'smooth'});
@@ -141,11 +139,13 @@ Signature: sig=:hFXQivWrXlTbzYLDs0yWxo+4/REu/OMEysVmK+OMidjLZ8nQXq/LrJPrFdEwNBV/
 
   setCoveredComponents = (value) => (e) => {
     //e.preventDefault();
-    var covered = new Set(this.state.coveredComponents);
-    if (covered.has(value)) {
-      covered.delete(value);
+    var covered = this.state.coveredComponents;
+    if (covered.some((c) => c['cid'] === value['cid'])) {
+      // remove the value
+      covered = covered.filter((c) => c['cid'] !== value['cid']);
     } else {
-      covered.add(value);
+      // add the value
+      covered.push(value);
     }
     this.setState({
       coveredComponents: [...covered]
@@ -577,7 +577,7 @@ MCowBQYDK2VwAyEAJrQLj5P/89iXES9+vFgrIy29clF9CC/oPPsw3c5D0bs=
       signingKeyX509: this.state.signingKeyX509,
       signingKeyJwk: this.state.signingKeyJwk,
       signingKeyShared: this.state.signingKeyShared,
-      alg: this.state.alg,
+      alg: this.state.algParam ? this.state.algParam : this.state.alg,
       label: this.state.label,
       httpMsg: this.state.httpMsg,
       signatureParams: this.state.signatureParams,
@@ -897,7 +897,7 @@ const CoveredComponents = ({...props}) =>
     { props.availableComponents[key].map((c, index) => (
     			<Form.Control key={index}>
             <label>
-              <input type="checkbox" checked={props.coveredComponents.includes(c)} onChange={props.setCoveredComponents(c)} />
+              <input type="checkbox" checked={props.coveredComponents.some((ec) => ec['cid'] === c['cid'])} onChange={props.setCoveredComponents(c)} />
               <code>{
                 c['id'] +
                 (c['sv'] ? ";sv" :

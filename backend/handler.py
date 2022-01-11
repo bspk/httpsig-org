@@ -138,9 +138,11 @@ def parse_components(msg):
     
     response['fields'] = []
     for h in p.get_headers():
+        cid = http_sfv.Item(h.lower())
         response['fields'].append(
             {
-                'id': h.lower(),
+                'id': cid.value,
+                'cid': str(cid),
                 'val': p.get_headers()[h] # Note: this normalizes the header value for us
             }
         )
@@ -151,17 +153,23 @@ def parse_components(msg):
                 sv.parse(p.get_headers()[h].encode('utf-8'))
             
                 for k in sv:
+                    cid = http_sfv.Item(h.lower())
+                    cid.params['key'] = k
                     response['fields'].append(
                         {
-                            'id': h.lower(),
+                            'id': cid.value,
+                            'cid': str(cid),
                             'key': k,
                             'val': str(sv[k])
                         }
                     )
             
+                cid = http_sfv.Item(h.lower())
+                cid.params['sv'] = True
                 response['fields'].append(
                     {
-                        'id': h.lower(),
+                        'id': cid.value,
+                        'cid': str(cid),
                         'sv': True,
                         'val': str(sv)
                     }
@@ -170,9 +178,12 @@ def parse_components(msg):
                 sv = http_sfv.List()
                 sv.parse(p.get_headers()[h].encode('utf-8'))
             
+                cid = http_sfv.Item(h.lower())
+                cid.params['sv'] = True
                 response['fields'].append(
                     {
-                        'id': h.lower(),
+                        'id': cid.value,
+                        'cid': str(cid),
                         'sv': True,
                         'val': str(sv)
                     }
@@ -181,13 +192,97 @@ def parse_components(msg):
                 sv = http_sfv.Item()
                 sv.parse(p.get_headers()[h].encode('utf-8'))
         
+                cid = http_sfv.Item(h.lower())
+                cid.params['sv'] = True
                 response['fields'].append(
                     {
-                        'id': h.lower(),
+                        'id': cid.value,
+                        'cid': str(cid),
                         'sv': True,
                         'val': str(sv)
                     }
                 )
+
+    if p.get_status_code():
+        # response
+        response['derived'] = [
+            {
+                'id': '@status',
+                'cid': str(http_sfv.Item('@status')),
+                'val': str(p.get_status_code())
+            }
+        ]
+    else:
+        # request
+        response['derived'] = [
+            {
+                'id': '@method',
+                'cid': str(http_sfv.Item('@method')),
+                'val': p.get_method()
+            },
+            {
+                'id': '@target-uri',
+                'cid': str(http_sfv.Item('@target-uri')),
+                'val': 
+                'https://' # TODO: this always assumes an HTTP connection for demo purposes
+                    + p.get_headers()['host'] # TODO: this library assumes HTTP 1.1
+                    + p.get_url()
+            },
+            {
+                'id': '@authority',
+                'cid': str(http_sfv.Item('@authority')),
+                'val':  p.get_headers()['host'] # TODO: this library assumes HTTP 1.1
+            },
+            {
+                'id': '@scheme',
+                'cid': str(http_sfv.Item('@scheme')),
+                'val':  'https' # TODO: this always assumes an HTTPS connection for demo purposes
+            },
+            {
+                'id': '@request-target',
+                'cid': str(http_sfv.Item('@request-target')),
+                'val':  p.get_url()
+            },
+            {
+                'id': '@path',
+                'cid': str(http_sfv.Item('@path')),
+                'val':  p.get_path()
+            },
+            {
+                'id': '@query',
+                'cid': str(http_sfv.Item('@query')),
+                'val':  p.get_query_string()
+            }
+        ]
+
+        qs = parse_qs(p.get_query_string())
+        for q in qs:
+            v = qs[q]
+            if len(v) == 1:
+                cid = http_sfv.Item('@query-param')
+                cid.params['name'] = q
+                response['derived'].append(
+                    {
+                        'id': cid.value,
+                        'cid': str(cid),
+                        'name': q,
+                        'val': v[0]
+                    }
+                )
+            elif len(v) > 1:
+                # Multiple values, undefined behavior?
+                for i in range(len(v)):
+                    cid = http_sfv.Item('@query-param')
+                    cid.params['name'] = q
+                    response['derived'].append(
+                        {
+                            'id': cid.value,
+                            'cid': str(cid),
+                            'name': q,
+                            'val': v[i],
+                            'idx': i
+                        }
+                    )
 
     if 'signature-input' in p.get_headers():
         # existing signatures, parse the values
@@ -199,8 +294,38 @@ def parse_components(msg):
         
         siginputs = {}
         for (k,v) in siginputheader.items():
+            
+            existingComponents = []
+            for c in v:
+                cc = { # holder object
+                    'id': c.value,
+                    'cid': str(c)
+                }
+                if not cc['id'].startswith('@'):
+                    # it's a header, try to get the existing value
+                    fields = (f for f in response['fields'] if f['id'] == cc['id'])
+                    if 'sv' in c.params:
+                        cc['sv'] = c.params['sv']
+                        cc['val'] = next((f['val'] for f in fields if f['sv'] == c.params['sv']), None)
+                    elif 'key' in c.params:
+                        cc['key'] = i.params['key']
+                        cc['val'] = next((f['val'] for f in fields if f['key'] == c.params['key']), None)
+                    else:
+                        cc['val'] = next((f['val'] for f in fields if ('key' not in f and 'sv' not in f)), None)
+                else:
+                    # it's derived
+                    derived = (d for d in response['derived'] if d['id'] == cc['id'])
+                    
+                    if cc['id'] == '@query-param' and 'name' in c.params:
+                        cc['name'] = c.params['name']
+                        cc['val'] = next((d['val'] for d in derived if d['name'] == c.params['name']), None)
+                    else:
+                        cc['val'] = next((d['val'] for d in derived if ('name' not in d)), None)
+
+                existingComponents.append(cc)
+            
             siginput = {
-                'coveredComponents': [c.value for c in v], # todo: handle parameters
+                'coveredComponents': existingComponents,
                 'params': {p:pv for (p,pv) in v.params.items()},
                 'value': str(v),
                 'signature': str(sigheader[k])
@@ -209,72 +334,6 @@ def parse_components(msg):
             
         response['inputSignatures'] = siginputs
 
-    if p.get_status_code():
-        # response
-        response['derived'] = [
-            {
-                'id': '@status',
-                'val': p.get_status_code()
-            }
-        ]
-    else:
-        # request
-        response['derived'] = [
-            {
-                'id': '@method',
-                'val': p.get_method()
-            },
-            {
-                'id': '@target-uri',
-                'val': 
-                'https://' # TODO: this always assumes an HTTP connection for demo purposes
-                    + p.get_headers()['host'] # TODO: this library assumes HTTP 1.1
-                    + p.get_url()
-            },
-            {
-                'id': '@authority',
-                'val':  p.get_headers()['host'] # TODO: this library assumes HTTP 1.1
-            },
-            {
-                'id': '@scheme',
-                'val':  'https' # TODO: this always assumes an HTTPS connection for demo purposes
-            },
-            {
-                'id': '@request-target',
-                'val':  p.get_url()
-            },
-            {
-                'id': '@path',
-                'val':  p.get_path()
-            },
-            {
-                'id': '@query',
-                'val':  p.get_query_string()
-            }
-        ]
-
-        qs = parse_qs(p.get_query_string())
-        for q in qs:
-            v = qs[q]
-            if len(v) == 1:
-                response['derived'].append(
-                    {
-                        'id': '@query-param',
-                        'name': q,
-                        'val': v[0]
-                    }
-                )
-            elif len(v) > 1:
-                # Multiple values, undefined behavior?
-                for i in range(len(v)):
-                    response['derived'].append(
-                        {
-                            'id': '@query-param',
-                            'name': q,
-                            'val': v[i],
-                            'idx': i
-                        }
-                    )
     return response
     
 def input(event, context):
@@ -447,8 +506,8 @@ def sign(event, context):
         
         signed = http_sfv.Item(signer.digest())
     elif alg == 'ed25519-sha512':
-        h = SHA512.new(siginput.encode('utf-8'))
-        signed = http_sfv.Item(key.sign(h.digest()).signature)
+        h = siginput.encode('utf-8')
+        signed = http_sfv.Item(key.sign(h).signature)
     elif alg == 'jose':
         # we're doing JOSE algs based on the key value
         if (not 'alg' in jwk) or (jwk['alg'] == 'none'):
@@ -632,7 +691,6 @@ def verify(event, context):
             }
         }
     
-    
     try:
         verified = False
         if alg == 'rsa-pss-sha512':
@@ -659,8 +717,8 @@ def verify(event, context):
         
             verified = (verifier.digest() == signature.value)
         elif alg == 'ed25519-sha512':
-            h = SHA512.new(siginput.encode('utf-8'))
-            verified = key.verify(h.digest(), signed.value)
+            h = siginput.encode('utf-8')
+            verified = key.verify(h, signed.value)
         elif alg == 'jose':
             # we're doing JOSE algs based on the key value
             if (not 'alg' in jwk) or (jwk['alg'] == 'none'):
@@ -756,7 +814,7 @@ def verify(event, context):
                     "Access-Control-Allow-Origin": "*"
                 }
             }
-    except (ValueError, TypeError):
+    except (ValueError, TypeError) as err:
         verified = False
 
     response = {
