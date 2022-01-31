@@ -466,7 +466,7 @@ w0EkjqF7xB4FivAxzic30tMM4GF+hR6Dxh71Z50VGGdldkkDXZCnTNnoXQ==
 MC4CAQAwBQYDK2VwBCIEIJ+DYvh6SEqVTm50DFtMDoQikTmiCqirVv9mWG9qfSnF
 -----END PRIVATE KEY-----
       `,
-      alg: 'ed25519-sha512',
+      alg: 'ed25519',
       signingKeyType: 'x509'
     });
   }
@@ -477,6 +477,7 @@ MC4CAQAwBQYDK2VwBCIEIJ+DYvh6SEqVTm50DFtMDoQikTmiCqirVv9mWG9qfSnF
 MCowBQYDK2VwAyEAJrQLj5P/89iXES9+vFgrIy29clF9CC/oPPsw3c5D0bs=
 -----END PUBLIC KEY-----
       `,
+      alg: 'ed25519',
       signingKeyType: 'x509'
     });
   }
@@ -681,7 +682,7 @@ MCowBQYDK2VwAyEAJrQLj5P/89iXES9+vFgrIy29clF9CC/oPPsw3c5D0bs=
                   <option value="ecdsa-p256-sha256">ECDSA</option>
                   <option value="hmac-sha256">HMAC</option>
                   <option value="rsa-v1_5-sha256">RSA 1.5</option>
-                  <option value="ed25519-sha512">Ed25519</option>
+                  <option value="ed25519">Ed25519</option>
         				</Form.Select>
               </Form.Control>
             </Form.Field>
@@ -825,7 +826,7 @@ MCowBQYDK2VwAyEAJrQLj5P/89iXES9+vFgrIy29clF9CC/oPPsw3c5D0bs=
                   <option value="ecdsa-p256-sha256" disabled={this.state.signingKeyType == 'shared'}>ECDSA</option>
                   <option value="hmac-sha256">HMAC</option>
                   <option value="rsa-v1_5-sha256" disabled={this.state.signingKeyType == 'shared'}>RSA 1.5</option>
-            <option value="ed25519-sha512" disabled={this.state.signingKeyType == 'shared'}>Ed25519</option>
+                  <option value="ed25519" disabled={this.state.signingKeyType == 'shared'}>Ed25519</option>
                   <option value="jose" disabled={this.state.signingKeyType !== 'jwk'}>Use JWA value from Key</option>
         				</Form.Select>
         			</Form.Control>
@@ -900,9 +901,9 @@ const CoveredComponents = ({...props}) =>
               <input type="checkbox" checked={props.coveredComponents.some((ec) => ec['cid'] === c['cid'])} onChange={props.setCoveredComponents(c)} />
               <code>{
                 c['id'] +
-                (c['sv'] ? ";sv" :
-                  (c['key'] ? ";key=" + c['key'] :
-                    (c['name'] ? ";name=" + c['name'] : ''))) }</code>
+                (c['sf'] ? " (structured)" :
+                  (c['key'] ? ", key=" + c['key'] :
+                    (c['name'] ? ", name=" + c['name'] : ''))) }</code>
             </label>
     			</Form.Control>
               ))}

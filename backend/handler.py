@@ -165,12 +165,12 @@ def parse_components(msg):
                     )
             
                 cid = http_sfv.Item(h.lower())
-                cid.params['sv'] = True
+                cid.params['sf'] = True
                 response['fields'].append(
                     {
                         'id': cid.value,
                         'cid': str(cid),
-                        'sv': True,
+                        'sf': True,
                         'val': str(sv)
                     }
                 )
@@ -179,12 +179,12 @@ def parse_components(msg):
                 sv.parse(p.get_headers()[h].encode('utf-8'))
             
                 cid = http_sfv.Item(h.lower())
-                cid.params['sv'] = True
+                cid.params['sf'] = True
                 response['fields'].append(
                     {
                         'id': cid.value,
                         'cid': str(cid),
-                        'sv': True,
+                        'sf': True,
                         'val': str(sv)
                     }
                 )
@@ -193,12 +193,12 @@ def parse_components(msg):
                 sv.parse(p.get_headers()[h].encode('utf-8'))
         
                 cid = http_sfv.Item(h.lower())
-                cid.params['sv'] = True
+                cid.params['sf'] = True
                 response['fields'].append(
                     {
                         'id': cid.value,
                         'cid': str(cid),
-                        'sv': True,
+                        'sf': True,
                         'val': str(sv)
                     }
                 )
@@ -251,7 +251,7 @@ def parse_components(msg):
             {
                 'id': '@query',
                 'cid': str(http_sfv.Item('@query')),
-                'val':  p.get_query_string()
+                'val':  '?' + p.get_query_string()
             }
         ]
 
@@ -304,14 +304,14 @@ def parse_components(msg):
                 if not cc['id'].startswith('@'):
                     # it's a header, try to get the existing value
                     fields = (f for f in response['fields'] if f['id'] == cc['id'])
-                    if 'sv' in c.params:
-                        cc['sv'] = c.params['sv']
-                        cc['val'] = next((f['val'] for f in fields if f['sv'] == c.params['sv']), None)
+                    if 'sf' in c.params:
+                        cc['sf'] = c.params['sf']
+                        cc['val'] = next((f['val'] for f in fields if f['sf'] == c.params['sf']), None)
                     elif 'key' in c.params:
                         cc['key'] = i.params['key']
                         cc['val'] = next((f['val'] for f in fields if f['key'] == c.params['key']), None)
                     else:
-                        cc['val'] = next((f['val'] for f in fields if ('key' not in f and 'sv' not in f)), None)
+                        cc['val'] = next((f['val'] for f in fields if ('key' not in f and 'sf' not in f)), None)
                 else:
                     # it's derived
                     derived = (d for d in response['derived'] if d['id'] == cc['id'])
@@ -336,7 +336,7 @@ def parse_components(msg):
 
     return response
     
-def input(event, context):
+def generate_input(event, context):
     if not event['body']:
         return {
             'statusCode': 400,
@@ -370,8 +370,8 @@ def input(event, context):
                 base += ': '
                 base += comp['val']
                 base += "\n"
-            elif 'sv' in cc:
-                i.params['sv'] = True
+            elif 'sf' in cc:
+                i.params['sf'] = True
                 comp = next((x for x in components['fields'] if x['id'] == c), None)
                 sigparams.append(i)
                 base += str(i)
@@ -388,13 +388,34 @@ def input(event, context):
         else:
             # it's a derived value
             i = http_sfv.Item(c)
-            comp = next((x for x in components['derived'] if x['id'] == c), None)
+            if 'key' in cc and c == '@request-response':
+                # request-response has a 'key' field
+                i.params['key'] = cc['key']
+                comp = next((x for x in components['derived'] if 'key' in x and x['id'] == c and x['key'] == cc['key']), None)
+                                
+                sigparams.append(i)
+                base += str(i)
+                base += ': '
+                base += comp['val']
+                base += "\n"
+            elif 'name' in cc and c == '@query-param':
+                # query-param has a 'name' field
+                i.params['name'] = cc['name']
+                comp = next((x for x in components['derived'] if 'name' in x and x['id'] == c and x['name'] == cc['name']), None)
+                                
+                sigparams.append(i)
+                base += str(i)
+                base += ': '
+                base += comp['val']
+                base += "\n"
+            else:
+                comp = next((x for x in components['derived'] if x['id'] == c), None)
 
-            sigparams.append(i)
-            base += str(i)
-            base += ': '
-            base += comp['val']
-            base += "\n"
+                sigparams.append(i)
+                base += str(i)
+                base += ': '
+                base += comp['val']
+                base += "\n"
 
     if 'created' in data:
         sigparams.params['created'] = data['created']
@@ -505,7 +526,7 @@ def sign(event, context):
         signer.update(siginput.encode('utf-8'))
         
         signed = http_sfv.Item(signer.digest())
-    elif alg == 'ed25519-sha512':
+    elif alg == 'ed25519':
         h = siginput.encode('utf-8')
         signed = http_sfv.Item(key.sign(h).signature)
     elif alg == 'jose':
@@ -716,7 +737,7 @@ def verify(event, context):
             verifier.update(siginput.encode('utf-8'))
         
             verified = (verifier.digest() == signature.value)
-        elif alg == 'ed25519-sha512':
+        elif alg == 'ed25519':
             h = siginput.encode('utf-8')
             verified = key.verify(h, signed.value)
         elif alg == 'jose':

@@ -48,7 +48,7 @@ functions:
           method: post
           cors: true
   input:
-    handler: handler.input
+    handler: handler.generate_input
     events:
       - http:
           path: input
