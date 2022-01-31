@@ -12,7 +12,7 @@ const Layout = ({ children }) => (
             <Hero.Body>
             <Heading>HTTP Message Signatures</Heading>
               <p>
-              This site allows you to try out HTTP Message Signatures interactively. This page works in two modes: signing and verifying. To sign, add an HTTP message to the form, choose which components should be signed, choose the signing key and algorithm, and view the signed results. To verify, add a signed HTTP message to the form, choose which signature to verify, supply the verification key material, and verify the results.
+              This site allows you to try out <a href="https://www.ietf.org/archive/id/draft-ietf-httpbis-message-signatures-08.html">HTTP Message Signatures</a> interactively. This page works in two modes: signing and verifying, both working in four steps. To sign, add an HTTP message to the form, choose which components should be signed, choose the signing key and algorithm, and view the signed results. To verify, add a signed HTTP message to the form, choose which signature to verify, supply the verification key material, and verify the results.
               </p>
             </Hero.Body>
           </Hero>
