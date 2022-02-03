@@ -44,12 +44,15 @@ def cors(event, controller):
     }
 
 def parse(event, context):
-    if not event['body']:
+    if 'body' not in event:
         return {
             'statusCode': 400,
             'headers': {
                 "Access-Control-Allow-Origin": "*"
-            }
+            },
+            'body': json.dumps({
+                'error': 'No input to parse'
+            })
         }
     
     msg = event['body'].encode('utf-8')
@@ -337,12 +340,15 @@ def parse_components(msg):
     return response
     
 def generate_input(event, context):
-    if not event['body']:
+    if 'body' not in event:
         return {
             'statusCode': 400,
             'headers': {
                 "Access-Control-Allow-Origin": "*"
-            }
+            },
+            'body': json.dumps({
+                'error': 'No input to process'
+            })
         }
     
     data = json.loads(event['body'])
@@ -453,12 +459,15 @@ def generate_input(event, context):
     }
     
 def sign(event, context):
-    if not event['body']:
+    if 'body' not in event:
         return {
             'statusCode': 400,
             'headers': {
                 "Access-Control-Allow-Origin": "*"
-            }
+            },
+            'body': json.dumps({
+                'error': 'No input to sign'
+            })
         }
     
     data = json.loads(event['body'])
@@ -482,7 +491,10 @@ def sign(event, context):
                 'statusCode': 400,
                 'headers': {
                     "Access-Control-Allow-Origin": "*"
-                }
+                },
+                'body': json.dumps({
+                    'error': 'Shared key with bad algorithm: ' + alg
+                })
             }
         
         sharedKey = data['signingKeyShared'].encode('utf-8')
@@ -494,7 +506,10 @@ def sign(event, context):
             'statusCode': 400,
             'headers': {
                 "Access-Control-Allow-Origin": "*"
-            }
+            },
+            'body': json.dumps({
+                'error': 'Unknown key type: ' + signingKeyType
+            })
         }
     
     if alg == 'jose' and signingKeyType != 'jwk':
@@ -503,7 +518,10 @@ def sign(event, context):
             'statusCode': 400,
             'headers': {
                 "Access-Control-Allow-Origin": "*"
-            }
+            },
+            'body': json.dumps({
+                'error': 'JOSE algorithm requires JWK formatted key, not ' + signingKeyType
+            })
         }
         
     if alg == 'rsa-pss-sha512':
@@ -537,7 +555,10 @@ def sign(event, context):
                 'statusCode': 400,
                 'headers': {
                     "Access-Control-Allow-Origin": "*"
-                }
+                },
+                'body': json.dumps({
+                    'error': 'JWK algorithm not found'
+                })
             }
         elif jwk['alg'] == 'RS256':
             h = SHA256.new(siginput.encode('utf-8'))
@@ -605,7 +626,10 @@ def sign(event, context):
                 'statusCode': 400,
                 'headers': {
                     "Access-Control-Allow-Origin": "*"
-                }
+                },
+                'body': json.dumps({
+                    'error': 'Unknown JWK algorithm: ' + jwk['alg']
+                })
             }
     else:
         # unknown algorithm
@@ -613,7 +637,10 @@ def sign(event, context):
             'statusCode': 400,
             'headers': {
                 "Access-Control-Allow-Origin": "*"
-            }
+            },
+            'body': json.dumps({
+                'error': 'Unknown algorithm: ' + alg
+            })
         }
 
     if not signed:
@@ -621,7 +648,10 @@ def sign(event, context):
             'statusCode': 500,
             'headers': {
                 "Access-Control-Allow-Origin": "*"
-            }
+            },
+            'body': json.dumps({
+                'error': 'Failed to generate signature'
+            })
         }
     
     
@@ -662,7 +692,10 @@ def verify(event, context):
             'statusCode': 400,
             'headers': {
                 "Access-Control-Allow-Origin": "*"
-            }
+            },
+            'body': json.dumps({
+                'error': 'No input to verify'
+            })
         }
     
     data = json.loads(event['body'])
@@ -688,7 +721,10 @@ def verify(event, context):
                 'statusCode': 400,
                 'headers': {
                     "Access-Control-Allow-Origin": "*"
-                }
+                },
+                'body': json.dumps({
+                    'error': 'Shared key used with invalid algorithm: ' + alg
+                })
             }
         
         sharedKey = data['signingKeyShared'].encode('utf-8')
@@ -700,7 +736,10 @@ def verify(event, context):
             'statusCode': 400,
             'headers': {
                 "Access-Control-Allow-Origin": "*"
-            }
+            },
+            'body': json.dumps({
+                'error': 'Unknown key type' + signingKeyType
+            })
         }
     
     if alg == 'jose' and signingKeyType != 'jwk':
@@ -709,7 +748,10 @@ def verify(event, context):
             'statusCode': 400,
             'headers': {
                 "Access-Control-Allow-Origin": "*"
-            }
+            },
+            'body': json.dumps({
+                'error': 'JOSE signing algorithm requires JWK formatted key'
+            })
         }
     
     try:
@@ -748,7 +790,10 @@ def verify(event, context):
                     'statusCode': 400,
                     'headers': {
                         "Access-Control-Allow-Origin": "*"
-                    }
+                    },
+                    'body': json.dumps({
+                        'error': 'Algorithm not found in JWK'
+                    })
                 }
             elif jwk['alg'] == 'RS256':
                 h = SHA256.new(siginput.encode('utf-8'))
@@ -825,7 +870,10 @@ def verify(event, context):
                     'statusCode': 400,
                     'headers': {
                         "Access-Control-Allow-Origin": "*"
-                    }
+                    },
+                    'body': json.dumps({
+                        'error': 'Unknown JWK algorithm: ' + jwk['alg']
+                    })
                 }
         else:
             # unknown algorithm
@@ -833,7 +881,10 @@ def verify(event, context):
                 'statusCode': 400,
                 'headers': {
                     "Access-Control-Allow-Origin": "*"
-                }
+                },
+                'body': json.dumps({
+                    'error': 'Unknown algorithm: ' + alg
+                })
             }
     except (ValueError, TypeError) as err:
         verified = False
