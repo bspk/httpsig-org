@@ -5,20 +5,22 @@ import Layout from '../components/layout';
 import { decodeItem, decodeList, decodeDict, encodeItem, encodeList, encodeDict} from 'structured-field-values';
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faClock, faPlusSquare, faTrash } from '@fortawesome/fontawesome-free-solid';
+import { faClock, faPlusSquare, faTrash, faPenFancy, faCheckSquare } from '@fortawesome/fontawesome-free-solid';
 
 
 
 import { Button, ButtonGroup, Tabs, Container, Section, Level, Form, Columns, Content, Heading, Box, Icon, Tag } from 'react-bulma-components';
 
 //const api = 'https://grb8qjtvye.execute-api.us-east-1.amazonaws.com/dev' // bspk test
-const api = 'https://o52ky0nc31.execute-api.ca-central-1.amazonaws.com/dev' // secureKey install
+//const api = 'https://o52ky0nc31.execute-api.ca-central-1.amazonaws.com/dev' // secureKey install
+const api = 'https://rntmg89xu9.execute-api.us-east-1.amazonaws.com/dev' // avast install
 //const api = 'http://localhost:3000/dev'
 
 class HttpSigForm extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
+      mode: 'sign', // can be 'sign' or 'verify'
       httpMsg: '',
       availableComponents: [],
       coveredComponents: [],
@@ -57,7 +59,7 @@ class HttpSigForm extends React.Component {
 Host: example.com
 Date: Tue, 20 Apr 2021 02:07:55 GMT
 Content-Type: application/json
-Digest: sha-256=X48E9qOokqqrvdts8nOJRJN3OWDUoyWxBf7kbu9DBPE=
+Content-Digest: sha-256=:X48E9qOokqqrvdts8nOJRJN3OWDUoyWxBf7kbu9DBPE=:
 Example-Dict: a=(1 2), b=3, c=4;aa=bb, d=(5 6);valid
 Content-Length: 18
 
@@ -70,7 +72,7 @@ Content-Length: 18
       httpMsg: `HTTP/1.1 200 OK
 Date: Tue, 20 Apr 2021 02:07:56 GMT
 Content-Type: application/json
-Digest: sha-256=X48E9qOokqqrvdts8nOJRJN3OWDUoyWxBf7kbu9DBPE=
+Content-Digest: sha-256=:X48E9qOokqqrvdts8nOJRJN3OWDUoyWxBf7kbu9DBPE=:
 Content-Length: 18
 
 {"hello": "world"}`
@@ -83,10 +85,11 @@ Content-Length: 18
 Host: example.com
 Date: Tue, 20 Apr 2021 02:07:55 GMT
 Content-Type: application/json
-Digest: sha-256=X48E9qOokqqrvdts8nOJRJN3OWDUoyWxBf7kbu9DBPE=
+Content-Digest: sha-256=:X48E9qOokqqrvdts8nOJRJN3OWDUoyWxBf7kbu9DBPE=:
 Content-Length: 18
-Signature-Input: sig=("@request-target" "@authority" "content-type" "digest" "content-length");created=1622749937;keyid="RSA (X.509 preloaded)";alg="rsa-pss-sha512"
-Signature: sig=:e996CBj1SsBZkw6p3Ps4HWUSCUJjjsh1JrOf1vUes+PSMFf5K0rMlI69cGGaByql4EjFcJGQELoNqZFLuwXWokTT6tl/WPcYieE4XSZukyAqLjvN59m9vznOY2o4TmZPhDEyhUPzFp9guLPjxptpoFUNNNUfhjgT0dBPl2YTE1DC2GBjr805864EbrDoEoTNz8vt7LN7XHvDWnDfL4F6ELgl8RcDR94aT0XksI/qXlRk/VefIc89wGekkkWGlzzcn3V9SBplMz1Q4fGkaRuu7T4nppTfA1gdhEcSsfa6YMkUY/CpJpjtIh1KdJVFU4YYseHAoZhf8Fw/RqKd3TmJcg==:
+Signature-Input: sig=("@method" "@authority" "@path" "@query" "content-type" "content-digest" "content-length");created=1622749937;keyid="RSA (X.509 preloaded)";alg="rsa-pss-sha512"
+Signature: sig=:BUt1JQp5SEvVDJmUqINLredbW0ktaGp423eRutpTfHiXgU8bhePTSebGqMoYm/Def8rJpdtbYRzNHUX8OzsAL0w6MKqk0Hvc6GuCzw+WLAIl/ZnOtR+AjOejYgbG+mZx5mb+N+M0DOh6tQpRxuAa/FA4uRAXr+r2dE7w8JeiY+fW38DiiurSVLW3zNgoTeCFnR/HI+8LWFUnm5nezkNAdpLduFW1Kdb1J7HOo2RvT/YsHGaNIHszyTfcVCnumtFCBHajvD9ktDvHwLM3vRJ/PwyUjeItD7trfYxGDPqNMUy7lcZT4HlJFOeEQlze2wL3+4fKVEYXV0IkvezVuFEtjA==:
+
 {"hello": "world"}`
     });
   }
@@ -96,10 +99,11 @@ Signature: sig=:e996CBj1SsBZkw6p3Ps4HWUSCUJjjsh1JrOf1vUes+PSMFf5K0rMlI69cGGaByql
       httpMsg: `HTTP/1.1 200 OK
 Date: Tue, 20 Apr 2021 02:07:56 GMT
 Content-Type: application/json
-Digest: sha-256=X48E9qOokqqrvdts8nOJRJN3OWDUoyWxBf7kbu9DBPE=
+Content-Digest: sha-256=:X48E9qOokqqrvdts8nOJRJN3OWDUoyWxBf7kbu9DBPE=:
 Content-Length: 18
-Signature-Input: sig=("digest" "content-type" "content-length" "@status");created=1622749937;keyid="RSA (X.509 preloaded)";alg="rsa-pss-sha512"
-Signature: sig=:XCMHw7lQowZE+WhZA4kEN8xSfMv1DwcYZfUw2Jzd48Vizacx0aInMmK0r7WxDJh49l1gmRozKKa1OP8W0+sDGI+N+/5tfJrYa3dOBRN1jv275jFiN2P7RehiQF0WagbYRUd5Dugpr9CUiTL0voq4WuvzGvP6rPUQtXvOIqLstEueyQRzir0rDDMw+NcpivpB65JZ4EEPw3dJRZNLB7WwRQkak4upWAbLPdm7gPa7MrbX32XHhGVj4xgPLIwVfSgZSbNOvwTw5ULM8Uy1exa/TwgQ9M4EcaQjrk4CQkeKFl6oyf3nk/8XbgJAAK4+uhwivLFeiTy0p2BWzcZiCfZOJw==:
+Signature-Input: sig=("content-digest" "content-type" "content-length" "@status");created=1622749937;keyid="RSA (X.509 preloaded)";alg="rsa-pss-sha512"
+Signature: sig=:cjya2ClOLXO3VMT9EhIggRvh1kKsYuMxonvQOSslX4+l1I9+l+1MJzLehpM/ysdxTEC+5X/8Gtcw8wMu1sRbpQcJjwHZ3vkt5OFJG9jgppGwrYEDb2+uCAooprRc59Ch7NcwBq7P8tBgvVVuk4phE7hAXQeCbGqOtynv5SoAusOiBKylhatJKUmaz0vAEUaUs2DIhlzeoOBlZkA45zxyuu1bQKD623E6/Ec3EBRwkWd8vlV8iQLiYv++ROlAzhAo3gTSNyxPD0hcvuoE+MVN6eAvpILp+TTcMzrNu1iPiQAPqE9o60Cqj6orKoa+sj+ZDWY1hauDJ5bD0d6ic1eCXA==:
+
 {"hello": "world"}`
     });
   }
@@ -132,6 +136,10 @@ Signature: sig=:XCMHw7lQowZE+WhZA4kEN8xSfMv1DwcYZfUw2Jzd48Vizacx0aInMmK0r7WxDJh4
         existingSignature: undefined,
         stage: 'params'
       }, () => {
+        console.log(this.state.inputSignatures);
+        if (this.state.inputSignatures) {
+          this.setExistingSignature(Object.keys(this.state.inputSignatures)[0]);
+        }
         document.getElementById('stages').scrollIntoView({behavior: 'smooth'});
       });
     });
@@ -281,6 +289,10 @@ Signature: sig=:XCMHw7lQowZE+WhZA4kEN8xSfMv1DwcYZfUw2Jzd48Vizacx0aInMmK0r7WxDJh4
 
   selectExistingSignature = (e) => {
     var sel = e.target.value;
+    this.setExistingSignature(sel);
+  }
+  
+  setExistingSignature = (sel) => {
     if (sel && sel != this.state.existingSignature) {
       var sig = this.state.inputSignatures[sel];
       var coveredComponents = sig['coveredComponents'];
@@ -295,7 +307,8 @@ Signature: sig=:XCMHw7lQowZE+WhZA4kEN8xSfMv1DwcYZfUw2Jzd48Vizacx0aInMmK0r7WxDJh4
         created: created,
         expires: expires,
         keyid: keyid,
-        existingSignature: sel
+        existingSignature: sel,
+        verifySignature: sel
       });
     } else {
       this.setState({
@@ -607,11 +620,35 @@ MCowBQYDK2VwAyEAJrQLj5P/89iXES9+vFgrIy29clF9CC/oPPsw3c5D0bs=
       stage: stage
     });
   }
+  
+  setMode = (mode) => (e) => {
+    e.preventDefault();
+    this.setState({
+      mode: mode,
+      stage: 'input'
+    });
+  }
 
   render = () => {
     return (
       <>
       <Heading id="stages">
+      <Columns>
+      <Columns.Column size="half">
+      <Button
+        color={this.state.mode === 'sign' ? 'info' : 'grey'}
+        fullwidth
+        onClick={this.setMode('sign')}>
+        Sign</Button>
+      </Columns.Column>
+      <Columns.Column size="half">
+      <Button
+        color={this.state.mode === 'verify' ? 'info' : 'grey'}
+        fullwidth
+        onClick={this.setMode('verify')}>
+        Verify</Button>
+      </Columns.Column>
+      </Columns>
       <Button 
         color={this.state.stage === 'input' ? 'primary' : 'info'}
         inverted={this.state.stage !== 'input'}
@@ -640,8 +677,8 @@ MCowBQYDK2VwAyEAJrQLj5P/89iXES9+vFgrIy29clF9CC/oPPsw3c5D0bs=
           <Heading>Input</Heading>
           <Section>
         		<Form.Label>HTTP Message</Form.Label>
-            <Button onClick={this.loadExampleRequest}>Example Request</Button>
-            <Button onClick={this.loadExampleResponse}>Example Response</Button>
+            {this.state.mode === 'sign' && <Button onClick={this.loadExampleRequest}>Example Request</Button>}
+            {this.state.mode === 'sign' && <Button onClick={this.loadExampleResponse}>Example Response</Button>}
             <Button onClick={this.loadExampleSignedRequest}>Example Signed Request</Button>
             <Button onClick={this.loadExampleSignedResponse}>Example Signed Response</Button>
         		<Form.Field>
@@ -659,7 +696,7 @@ MCowBQYDK2VwAyEAJrQLj5P/89iXES9+vFgrIy29clF9CC/oPPsw3c5D0bs=
         <Box id="params">
           <Heading>Signature Parameters</Heading>
           <Section>
-            {this.state.inputSignatures && (
+            {this.state.mode === 'verify' && this.state.inputSignatures && (
               <Form.Field>
                 <Form.Label>Use parameters from existing signature</Form.Label>
                 <Form.Control>
@@ -744,7 +781,7 @@ MCowBQYDK2VwAyEAJrQLj5P/89iXES9+vFgrIy29clF9CC/oPPsw3c5D0bs=
             </Form.Field>
           </Section>
           <Section>
-            <Button onClick={this.generateSignatureInput}>Generate Signature Input</Button>
+            <Button onClick={this.generateSignatureInput}>Generate Signature Base</Button>
           </Section>
         </Box>
       )}
@@ -752,7 +789,7 @@ MCowBQYDK2VwAyEAJrQLj5P/89iXES9+vFgrIy29clF9CC/oPPsw3c5D0bs=
         <Box id="material">
           <Heading>Signature Material</Heading>
           <Section>
-        		<Form.Label>Signature Input String</Form.Label>
+        		<Form.Label>Signature Base</Form.Label>
         		<Form.Field>
         			<Form.Control>
     		        <Form.Textarea rows={10} spellCheck={false} onChange={this.setSignatureInput} value={this.state.signatureInput ? this.state.signatureInput : ''} />
@@ -764,7 +801,7 @@ MCowBQYDK2VwAyEAJrQLj5P/89iXES9+vFgrIy29clF9CC/oPPsw3c5D0bs=
         			<Form.Label>Key Format</Form.Label>
         			<Form.Control>
                 <Form.Select onChange={this.setSigningKeyType} value={this.state.signingKeyType ? this.state.signingKeyType : ''}>
-                  <option value="x509">X.509</option>
+                  <option value="x509">PEM (Certificate)</option>
                   <option value="jwk">JWK</option>
                   <option value="shared">Shared</option>
         				</Form.Select>
@@ -773,12 +810,12 @@ MCowBQYDK2VwAyEAJrQLj5P/89iXES9+vFgrIy29clF9CC/oPPsw3c5D0bs=
         		<Form.Label>Key material</Form.Label>
             {this.state.signingKeyType == 'x509' && (
               <>
-                <Button onClick={this.loadRsaPssPrivate}>RSA Private</Button>
-                <Button onClick={this.loadRsaPssPublic}>RSA Public</Button>
-                <Button onClick={this.loadEccPrivate}>ECC Private</Button>
-                <Button onClick={this.loadEccPublic}>ECC Public</Button>
-                <Button onClick={this.loadEdPrivate}>Ed25519 Private</Button>
-                <Button onClick={this.loadEdPublic}>Ed25519 Public</Button>
+                {this.state.mode === 'sign' && <Button onClick={this.loadRsaPssPrivate}>RSA Private</Button>}
+                {this.state.mode === 'verify' && <Button onClick={this.loadRsaPssPublic}>RSA Public</Button>}
+                {this.state.mode === 'sign' && <Button onClick={this.loadEccPrivate}>ECC Private</Button>}
+                {this.state.mode === 'verify' && <Button onClick={this.loadEccPublic}>ECC Public</Button>}
+                {this.state.mode === 'sign' && <Button onClick={this.loadEdPrivate}>Ed25519 Private</Button>}
+                {this.state.mode === 'verify' && <Button onClick={this.loadEdPublic}>Ed25519 Public</Button>}
             		<Form.Field>
             			<Form.Control>
         		        <Form.Textarea rows={10} spellCheck={false} onChange={this.setSigningKeyX509} value={this.state.signingKeyX509} />
@@ -788,9 +825,9 @@ MCowBQYDK2VwAyEAJrQLj5P/89iXES9+vFgrIy29clF9CC/oPPsw3c5D0bs=
             )}
             {this.state.signingKeyType == 'jwk' && (
               <>
-                <Button onClick={this.loadRsaPrivateJwk}>RSA Private</Button>
-                <Button onClick={this.loadRsaPublicJwk}>RSA Public</Button>
-                <Button onClick={this.loadEccPrivateJwk}>ECC Private</Button>
+                {this.state.mode === 'sign' && <Button onClick={this.loadRsaPrivateJwk}>RSA Private</Button>}
+                {this.state.mode === 'verify' && <Button onClick={this.loadRsaPublicJwk}>RSA Public</Button>}
+                {this.state.mode === 'sign' && <Button onClick={this.loadEccPrivateJwk}>ECC Private</Button>}
                 <Button onClick={this.loadSharedJwk}>Shared</Button>
             		<Form.Field>
             			<Form.Control>
@@ -832,11 +869,13 @@ MCowBQYDK2VwAyEAJrQLj5P/89iXES9+vFgrIy29clF9CC/oPPsw3c5D0bs=
         			</Form.Control>
         		</Form.Field>
           </Section>
+          {this.state.mode === 'sign' && (
           <Section>
-            <Button onClick={this.signInput}>Sign Signature Input</Button>
+            <Button onClick={this.signInput}>Sign Signature Base</Button>
           </Section>
+          )}
+          {this.state.mode === 'verify' && this.state.inputSignatures && (
           <Section>
-            {this.state.inputSignatures && (
               <Form.Field>
                 <Form.Control>
                   <Form.Select value={this.state.verifySignature} onChange={this.selectVerifySignature}>
@@ -848,23 +887,30 @@ MCowBQYDK2VwAyEAJrQLj5P/89iXES9+vFgrIy29clF9CC/oPPsw3c5D0bs=
                   <Button onClick={this.verifySignature}>Verify Signature</Button>
                 </Form.Control>
               </Form.Field>
-            )}
           </Section>
+          )}
         </Box>
       )}
       {this.state.stage === 'output' && (
         <Box id="output">
           <Heading>Output</Heading>
-          {this.state.signatureVerified !== undefined && (
+          {this.state.mode === 'verify' && (
           <Section>
+            <Form.Label>Signature Status</Form.Label>
+            <Form.Field>
+              <Form.Control>
             {this.state.signatureVerified && (
               <Tag size="large" className="is-fullwidth" color="success">Signature Verified Successfully</Tag>
             )}
+              </Form.Control>
+            </Form.Field>
             {!this.state.signatureVerified && (
               <Tag size="large" className="is-fullwidth" color="danger">Signature Verification Failed</Tag>
             )}
           </Section>
           )}
+          {this.state.mode === 'sign' && (
+          <>
           <Section>
         		<Form.Label>Signature Value (in Base64)</Form.Label>
         		<Form.Field>
@@ -881,6 +927,8 @@ MCowBQYDK2VwAyEAJrQLj5P/89iXES9+vFgrIy29clF9CC/oPPsw3c5D0bs=
         			</Form.Control>
         		</Form.Field>
           </Section>
+          </>
+          )}
         </Box>
       )}
       </>
