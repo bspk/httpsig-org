@@ -136,8 +136,7 @@ Signature: sig=:cjya2ClOLXO3VMT9EhIggRvh1kKsYuMxonvQOSslX4+l1I9+l+1MJzLehpM/ysdx
         existingSignature: undefined,
         stage: 'params'
       }, () => {
-        console.log(this.state.inputSignatures);
-        if (this.state.inputSignatures) {
+        if (this.state.mode === 'verify' && this.state.inputSignatures) {
           this.setExistingSignature(Object.keys(this.state.inputSignatures)[0]);
         }
         document.getElementById('stages').scrollIntoView({behavior: 'smooth'});
