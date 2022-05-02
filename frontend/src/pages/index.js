@@ -845,6 +845,7 @@ MCowBQYDK2VwAyEAJrQLj5P/89iXES9+vFgrIy29clF9CC/oPPsw3c5D0bs=
               </>
             )}
           </Section>
+          {this.state.mode === 'sign' && (
           <Section>
             <Form.Field>
               <Form.Label>Label</Form.Label>
@@ -853,6 +854,7 @@ MCowBQYDK2VwAyEAJrQLj5P/89iXES9+vFgrIy29clF9CC/oPPsw3c5D0bs=
               </Form.Control>
             </Form.Field>
           </Section>
+          )}
           <Section>
         		<Form.Field>
         			<Form.Label>Signature Algorithm</Form.Label>
