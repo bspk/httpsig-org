@@ -254,13 +254,22 @@ Signature: sig=:cjya2ClOLXO3VMT9EhIggRvh1kKsYuMxonvQOSslX4+l1I9+l+1MJzLehpM/ysdx
   generateSignatureInput = (e) => {
     e.preventDefault();
 
+    if (this.state.mode === 'verify' && this.state.existingSignature) {
+      var sig = this.state.inputSignatures[this.state.existingSignature];
+      var params = sig['params'];
+    } else {
+      var params = {
+        alg: this.state.algParam ? this.state.algParam : undefined,
+        keyid: this.state.keyid,
+        created: this.state.created,
+        expires: this.state.expires
+      };
+    }
+    
     var body = {
       msg: this.state.httpMsg,
       coveredComponents: this.state.coveredComponents,
-      alg: this.state.algParam ? this.state.algParam : undefined,
-      keyid: this.state.keyid,
-      created: this.state.created,
-      expires: this.state.expires
+      params: params
     };
 
     fetch(api + '/input', {
