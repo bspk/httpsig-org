@@ -47,11 +47,11 @@ functions:
           path: parse
           method: post
           cors: true
-  input:
+  base:
     handler: handler.base
     events:
       - http:
-          path: input
+          path: base
           method: post
           cors: true
   sign:

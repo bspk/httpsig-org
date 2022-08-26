@@ -57,8 +57,17 @@ def parse(event, context):
             })
         }
     
-    msg = event['body'].encode('utf-8')
-    response = parse_components(msg)
+    data = json.loads(event['body'])
+    
+    msg = data['msg'].encode('utf-8')
+    response = {
+        'components': parse_components(msg)
+    }
+    
+    if 'req' in data:
+        req = data['req'].encode('utf-8')
+        response['reqComponents'] = parse_components(req, True)
+    
     return {
         'statusCode': 200,
         'headers': {
@@ -81,16 +90,19 @@ def base(event, context):
     
     data = json.loads(event['body'])
     #print(data)
-    msg = data['msg'].encode('utf-8')
-    # re-parse the input message (TODO: should we send the parsed components instead?)
-    components = parse_components(msg)
+    components = data['components']
     
     params = data['params']
-    
-    response = generate_input(
+
+    reqComponents = []
+    if 'reqComponents' in data:
+        reqComponents = data['reqComponents']
+
+    response = generate_base(
         components,
         data['coveredComponents'],
-        params
+        params,
+        reqComponents
     )
 
    #print(base)

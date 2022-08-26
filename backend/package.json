@@ -4,6 +4,7 @@
     "slspress": "^2.2.5"
   },
   "devDependencies": {
-    "serverless-offline": "^8.2.0"
+    "serverless-offline": "^8.2.0",
+    "serverless-offline-python": "^3.22.3"
   }
 }

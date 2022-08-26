@@ -9,7 +9,7 @@ import { faClock, faPlusSquare, faTrash, faPenFancy, faCheckSquare } from '@fort
 
 
 
-import { Button, ButtonGroup, Tabs, Container, Section, Level, Form, Columns, Content, Heading, Box, Icon, Tag } from 'react-bulma-components';
+import { Button, ButtonGroup, Tabs, Container, Section, Level, Form, Columns, Content, Heading, Box, Icon, Tag, TagGroup } from 'react-bulma-components';
 
 //const api = 'https://grb8qjtvye.execute-api.us-east-1.amazonaws.com/dev' // bspk test
 //const api = 'https://o52ky0nc31.execute-api.ca-central-1.amazonaws.com/dev' // secureKey install
@@ -22,6 +22,10 @@ class HttpSigForm extends React.Component {
     this.state = {
       mode: 'sign', // can be 'sign' or 'verify'
       httpMsg: '',
+      showRelatedMsg: false,
+      relatedMsg: '',
+      parsedComponents: [],
+      parsedRelatedComponents: [],
       availableComponents: [],
       coveredComponents: [],
       algParam: '',
@@ -29,6 +33,8 @@ class HttpSigForm extends React.Component {
       keyid: undefined,
       created: undefined,
       expires: undefined,
+      nonce: undefined,
+      context: undefined,
       signatureInput: undefined,
       signatureParams: undefined,
       inputSignatures: undefined,
@@ -53,6 +59,19 @@ class HttpSigForm extends React.Component {
     });
   }
 
+  setShowRelatedMsg = (e) => {
+    var value = !this.state.showRelatedMsg;
+    this.setState({
+      showRelatedMsg: value
+    });
+  }
+
+  setRelatedMsg = (e) => {
+    this.setState({
+      relatedMsg: e.target.value
+    });
+  }
+
   loadExampleRequest = (e) => {
     this.setState({
       httpMsg: `POST /foo?param=value&pet=dog HTTP/1.1
@@ -63,7 +82,8 @@ Content-Digest: sha-256=:X48E9qOokqqrvdts8nOJRJN3OWDUoyWxBf7kbu9DBPE=:
 Example-Dict: a=(1 2), b=3, c=4;aa=bb, d=(5 6);valid
 Content-Length: 18
 
-{"hello": "world"}`
+{"hello": "world"}`,
+      relatedMsg: ''
     });
   }
 
@@ -73,6 +93,15 @@ Content-Length: 18
 Date: Tue, 20 Apr 2021 02:07:56 GMT
 Content-Type: application/json
 Content-Digest: sha-256=:X48E9qOokqqrvdts8nOJRJN3OWDUoyWxBf7kbu9DBPE=:
+Content-Length: 18
+
+{"hello": "world"}`,
+      relatedMsg: `POST /foo?param=value&pet=dog HTTP/1.1
+Host: example.com
+Date: Tue, 20 Apr 2021 02:07:55 GMT
+Content-Type: application/json
+Content-Digest: sha-256=:X48E9qOokqqrvdts8nOJRJN3OWDUoyWxBf7kbu9DBPE=:
+Example-Dict: a=(1 2), b=3, c=4;aa=bb, d=(5 6);valid
 Content-Length: 18
 
 {"hello": "world"}`
@@ -90,7 +119,8 @@ Content-Length: 18
 Signature-Input: sig=("@method" "@authority" "@path" "@query" "content-type" "content-digest" "content-length");created=1622749937;keyid="RSA (X.509 preloaded)";alg="rsa-pss-sha512"
 Signature: sig=:BUt1JQp5SEvVDJmUqINLredbW0ktaGp423eRutpTfHiXgU8bhePTSebGqMoYm/Def8rJpdtbYRzNHUX8OzsAL0w6MKqk0Hvc6GuCzw+WLAIl/ZnOtR+AjOejYgbG+mZx5mb+N+M0DOh6tQpRxuAa/FA4uRAXr+r2dE7w8JeiY+fW38DiiurSVLW3zNgoTeCFnR/HI+8LWFUnm5nezkNAdpLduFW1Kdb1J7HOo2RvT/YsHGaNIHszyTfcVCnumtFCBHajvD9ktDvHwLM3vRJ/PwyUjeItD7trfYxGDPqNMUy7lcZT4HlJFOeEQlze2wL3+4fKVEYXV0IkvezVuFEtjA==:
 
-{"hello": "world"}`
+{"hello": "world"}`,
+      relatedMsg: ''
     });
   }
 
@@ -104,35 +134,61 @@ Content-Length: 18
 Signature-Input: sig=("content-digest" "content-type" "content-length" "@status");created=1622749937;keyid="RSA (X.509 preloaded)";alg="rsa-pss-sha512"
 Signature: sig=:cjya2ClOLXO3VMT9EhIggRvh1kKsYuMxonvQOSslX4+l1I9+l+1MJzLehpM/ysdxTEC+5X/8Gtcw8wMu1sRbpQcJjwHZ3vkt5OFJG9jgppGwrYEDb2+uCAooprRc59Ch7NcwBq7P8tBgvVVuk4phE7hAXQeCbGqOtynv5SoAusOiBKylhatJKUmaz0vAEUaUs2DIhlzeoOBlZkA45zxyuu1bQKD623E6/Ec3EBRwkWd8vlV8iQLiYv++ROlAzhAo3gTSNyxPD0hcvuoE+MVN6eAvpILp+TTcMzrNu1iPiQAPqE9o60Cqj6orKoa+sj+ZDWY1hauDJ5bD0d6ic1eCXA==:
 
-{"hello": "world"}`
+{"hello": "world"}`,
+      relatedMsg: ''
     });
   }
 
   parseHttpMsg = (e) => {
     e.preventDefault();
+    
+    var body = {
+      msg: this.state.httpMsg
+    };
+    
+    if (this.state.showRelatedMsg) {
+      body['req'] = this.state.relatedMsg;
+    }
+    
     fetch(api + '/parse', {
       method: 'POST',
-      body: this.state.httpMsg
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(body)
     }).then(response => {
       return response.json()
     }).then(data => {
-      var possible = data['fields'].concat(data['derived']);
+      var components = data['components'];
+      var reqComponents = data['reqComponents']
+
+      var possible = components['fields'].concat(components['derived']);
 
       var availableComponents = {};
 
       possible.forEach(c => {
+
         if (!(c['id'] in availableComponents)) {
           availableComponents[c['id']] = [];
         }
         availableComponents[c['id']].push(c);
       });
-
-      console.log(availableComponents);
+      
+      if (reqComponents) {
+        possible = reqComponents['fields'].concat(reqComponents['derived']);
+        
+        possible.forEach(c => {
+          if (!(c['id'] in availableComponents)) {
+            availableComponents[c['id']] = [];
+          }
+          availableComponents[c['id']].push(c);
+        });
+      }
 
       this.setState({
         availableComponents: availableComponents,
         coveredComponents: [],
         inputSignatures: data['inputSignatures'],
+        parsedComponents: components,
+        parsedRelatedComponents: reqComponents,
         existingSignature: undefined,
         stage: 'params'
       }, () => {
@@ -250,6 +306,18 @@ Signature: sig=:cjya2ClOLXO3VMT9EhIggRvh1kKsYuMxonvQOSslX4+l1I9+l+1MJzLehpM/ysdx
       expires: undefined
     });
   }
+  
+  setNonce = (e) => {
+    this.setState({
+      nonce: e.target.value
+    });
+  }
+  
+  setContext = (e) => {
+    this.setState({
+      context: e.target.value
+    });
+  }
 
   generateSignatureInput = (e) => {
     e.preventDefault();
@@ -262,17 +330,20 @@ Signature: sig=:cjya2ClOLXO3VMT9EhIggRvh1kKsYuMxonvQOSslX4+l1I9+l+1MJzLehpM/ysdx
         alg: this.state.algParam ? this.state.algParam : undefined,
         keyid: this.state.keyid,
         created: this.state.created,
-        expires: this.state.expires
+        expires: this.state.expires,
+        nonce: this.state.nonce,
+        context: this.state.context
       };
     }
     
     var body = {
-      msg: this.state.httpMsg,
+      components: this.state.parsedComponents,
+      reqComponents: this.state.parsedRelatedComponents,
       coveredComponents: this.state.coveredComponents,
       params: params
     };
 
-    fetch(api + '/input', {
+    fetch(api + '/base', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify(body)
@@ -552,6 +623,7 @@ MCowBQYDK2VwAyEAJrQLj5P/89iXES9+vFgrIy29clF9CC/oPPsw3c5D0bs=
       alg: this.state.alg,
       label: this.state.label,
       httpMsg: this.state.httpMsg,
+      relatedMsg: this.state.relatedMsg,
       signatureParams: this.state.signatureParams
     };
 
@@ -602,6 +674,7 @@ MCowBQYDK2VwAyEAJrQLj5P/89iXES9+vFgrIy29clF9CC/oPPsw3c5D0bs=
       alg: this.state.algParam ? this.state.algParam : this.state.alg,
       label: this.state.label,
       httpMsg: this.state.httpMsg,
+      relatedMsg: this.state.relatedMsg,
       signatureParams: this.state.signatureParams,
       signature: this.state.inputSignatures[this.state.verifySignature]['signature']
     };
@@ -694,6 +767,16 @@ MCowBQYDK2VwAyEAJrQLj5P/89iXES9+vFgrIy29clF9CC/oPPsw3c5D0bs=
     		        <Form.Textarea rows={10} spellCheck={false} onChange={this.setHttpMsg} value={this.state.httpMsg} />
         			</Form.Control>
         		</Form.Field>
+        		<Form.Field>
+              <label>
+                <input type="checkbox" checked={this.state.showRelatedMsg} onChange={this.setShowRelatedMsg} /> Send Related-Request Message Context
+              </label>
+            {this.state.showRelatedMsg && 
+        			<Form.Control>
+    		        <Form.Textarea rows={10} spellCheck={false} onChange={this.setRelatedMsg} value={this.state.relatedMsg} />
+        			</Form.Control>
+             }
+        		</Form.Field>
           </Section>
           <Section>
             <Button onClick={this.parseHttpMsg}>Parse</Button>
@@ -785,6 +868,18 @@ MCowBQYDK2VwAyEAJrQLj5P/89iXES9+vFgrIy29clF9CC/oPPsw3c5D0bs=
                     <FontAwesomeIcon icon={faTrash} />
                   </Icon>
                 </Button>
+              </Form.Control>
+            </Form.Field>
+            <Form.Field>
+              <Form.Label>Nonce</Form.Label>
+              <Form.Control>
+        				<Form.Input onChange={this.setNonce} value={this.state.nonce ? this.state.nonce : ''} />
+              </Form.Control>
+            </Form.Field>
+            <Form.Field>
+              <Form.Label>Context</Form.Label>
+              <Form.Control>
+        				<Form.Input onChange={this.setContext} value={this.state.context ? this.state.context : ''} />
               </Form.Control>
             </Form.Field>
           </Section>
@@ -957,14 +1052,14 @@ const CoveredComponents = ({...props}) =>
     			<Form.Control key={index}>
             <label>
               <input type="checkbox" checked={props.coveredComponents.some((ec) => ec['cid'] === c['cid'])} onChange={props.setCoveredComponents(c)} />
-              <code>{
-                c['id'] +
-                (c['sf'] ? " (structured)" :
-                  (c['key'] ? ", key=" + c['key'] :
-                    (c['name'] ? ", name=" + c['name'] : ''))) }</code>
+              <code>{c['id']}</code>
+      { c['sf'] && (<Tag color="success">structured</Tag>) }
+      { c['req'] && (<Tag color="info">request</Tag>) }
+      { c['key'] && (<Tag color="dark">key="{c['key']}"</Tag>) }
+      { c['name'] && (<Tag color="danger">name="{c['name']}"</Tag>) }
             </label>
     			</Form.Control>
-              ))}
+      ))}
         </Form.Field>
   ))}
       </>
