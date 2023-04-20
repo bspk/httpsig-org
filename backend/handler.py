@@ -29,6 +29,10 @@ import base64
 
 from httpsig import *
 
+from flask import Flask, request
+
+app = Flask(__name__, static_folder='/frontend', static_url_path='/')
+
 # used with RSA-PSS and jose PS512
 mgf512 = lambda x, y: MGF1(x, y, SHA512)
 # used with jose PS384
@@ -36,28 +40,9 @@ mgf384 = lambda x, y: MGF1(x, y, SHA384)
 # used with jose PS256
 mgf256 = lambda x, y: MGF1(x, y, SHA256)
 
-def cors(event, controller):
-    return {
-        'statusCode': 200,
-        'headers': {
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Methods": "OPTIONS,POST,GET"
-        }
-    }
-
-def parse(event, context):
-    if 'body' not in event:
-        return {
-            'statusCode': 400,
-            'headers': {
-                "Access-Control-Allow-Origin": "*"
-            },
-            'body': json.dumps({
-                'error': 'No input to parse'
-            })
-        }
-    
-    data = json.loads(event['body'])
+@app.post("/parse")
+def parse():
+    data = request.json
     
     msg = data['msg'].encode('utf-8')
     response = {
@@ -68,27 +53,11 @@ def parse(event, context):
         req = data['req'].encode('utf-8')
         response['reqComponents'] = parse_components(req, True)
     
-    return {
-        'statusCode': 200,
-        'headers': {
-            "Access-Control-Allow-Origin": "*"
-        },
-        'body': json.dumps(response)
-    }
+    return response
 
-def base(event, context):
-    if 'body' not in event:
-        return {
-            'statusCode': 400,
-            'headers': {
-                "Access-Control-Allow-Origin": "*"
-            },
-            'body': json.dumps({
-                'error': 'No input to process'
-            })
-        }
-    
-    data = json.loads(event['body'])
+@app.post("/base")
+def base():
+    data = request.json
     #print(data)
     components = data['components']
     
@@ -106,27 +75,11 @@ def base(event, context):
     )
 
    #print(base)
-    return {
-        'statusCode': 200,
-        'headers': {
-            "Access-Control-Allow-Origin": "*"
-        },
-        'body': json.dumps(response)
-    }
-    
-def sign(event, context):
-    if 'body' not in event:
-        return {
-            'statusCode': 400,
-            'headers': {
-                "Access-Control-Allow-Origin": "*"
-            },
-            'body': json.dumps({
-                'error': 'No input to sign'
-            })
-        }
-    
-    data = json.loads(event['body'])
+    return response
+
+@app.post("/sign")
+def sign():
+    data = request.json
 
     siginput = data['signatureInput']
     sigparams = data['signatureParams']
@@ -143,42 +96,18 @@ def sign(event, context):
     elif signingKeyType == 'shared':
         if alg != 'hmac-sha256':
             # shared key type only good for hmac
-            return {
-                'statusCode': 400,
-                'headers': {
-                    "Access-Control-Allow-Origin": "*"
-                },
-                'body': json.dumps({
-                    'error': 'Shared key with bad algorithm: ' + alg
-                })
-            }
+            return {'error': 'Shared key with bad algorithm: ' + alg}, 400
         
         sharedKey = data['signingKeyShared'].encode('utf-8')
     elif signingKeyType == 'jwk':
         key, jwk, sharedKey = parseKeyJwk(data['signingKeyJwk'])
     else:
         # unknown key type
-        return {
-            'statusCode': 400,
-            'headers': {
-                "Access-Control-Allow-Origin": "*"
-            },
-            'body': json.dumps({
-                'error': 'Unknown key type: ' + signingKeyType
-            })
-        }
+        return {'error': 'Unknown key type: ' + signingKeyType}, 400
     
     if alg == 'jose' and signingKeyType != 'jwk':
         # JOSE-driven algorithm choice only available for JWK formatted keys
-        return {
-            'statusCode': 400,
-            'headers': {
-                "Access-Control-Allow-Origin": "*"
-            },
-            'body': json.dumps({
-                'error': 'JOSE algorithm requires JWK formatted key, not ' + signingKeyType
-            })
-        }
+        return {'error': 'JOSE algorithm requires JWK formatted key, not ' + signingKeyType}, 400
         
     if alg == 'rsa-pss-sha512':
         h = SHA512.new(siginput.encode('utf-8'))
@@ -207,15 +136,8 @@ def sign(event, context):
         # we're doing JOSE algs based on the key value
         if (not 'alg' in jwk) or (jwk['alg'] == 'none'):
             # unknown algorithm
-            return {
-                'statusCode': 400,
-                'headers': {
-                    "Access-Control-Allow-Origin": "*"
-                },
-                'body': json.dumps({
-                    'error': 'JWK algorithm not found'
-                })
-            }
+            return {'error': 'JWK algorithm not found'}, 400
+
         elif jwk['alg'] == 'RS256':
             h = SHA256.new(siginput.encode('utf-8'))
             signer = pkcs1_15.new(key)
@@ -278,37 +200,14 @@ def sign(event, context):
             signed = http_sfv.Item(signer.sign(h))
         else:
             # unknown algorithm
-            return {
-                'statusCode': 400,
-                'headers': {
-                    "Access-Control-Allow-Origin": "*"
-                },
-                'body': json.dumps({
-                    'error': 'Unknown JWK algorithm: ' + jwk['alg']
-                })
-            }
+            return {'error': 'Unknown JWK algorithm: ' + jwk['alg']}, 400
+
     else:
         # unknown algorithm
-        return {
-            'statusCode': 400,
-            'headers': {
-                "Access-Control-Allow-Origin": "*"
-            },
-            'body': json.dumps({
-                'error': 'Unknown algorithm: ' + alg
-            })
-        }
+        return {'error': 'Unknown algorithm: ' + alg}, 400
 
     if not signed:
-        return {
-            'statusCode': 500,
-            'headers': {
-                "Access-Control-Allow-Origin": "*"
-            },
-            'body': json.dumps({
-                'error': 'Failed to generate signature'
-            })
-        }
+        return {'error': 'Failed to generate signature'}, 500
     
     
     # by here, we know that we have the signed blob
@@ -334,27 +233,11 @@ def sign(event, context):
         'headers': headers
     }
     
-    return {
-        'statusCode': 200,
-        'headers': {
-            "Access-Control-Allow-Origin": "*"
-        },
-        'body': json.dumps(response)
-    }
+    return response
 
-def verify(event, context):
-    if not event['body']:
-        return {
-            'statusCode': 400,
-            'headers': {
-                "Access-Control-Allow-Origin": "*"
-            },
-            'body': json.dumps({
-                'error': 'No input to verify'
-            })
-        }
-    
-    data = json.loads(event['body'])
+@app.post("/verify")
+def verify():
+    data = request.json
 
     msg = data['httpMsg']
     siginput = data['signatureInput']
@@ -373,42 +256,18 @@ def verify(event, context):
     elif signingKeyType == 'shared':
         if alg != 'hmac-sha256':
             # shared key type only good for hmac
-            return {
-                'statusCode': 400,
-                'headers': {
-                    "Access-Control-Allow-Origin": "*"
-                },
-                'body': json.dumps({
-                    'error': 'Shared key used with invalid algorithm: ' + alg
-                })
-            }
+            return {'error': 'Shared key used with invalid algorithm: ' + alg}, 400
         
         sharedKey = data['signingKeyShared'].encode('utf-8')
     elif signingKeyType == 'jwk':
         key, jwk, sharedKey = parseKeyJwk(data['signingKeyJwk'])
     else:
         # unknown key type
-        return {
-            'statusCode': 400,
-            'headers': {
-                "Access-Control-Allow-Origin": "*"
-            },
-            'body': json.dumps({
-                'error': 'Unknown key type' + signingKeyType
-            })
-        }
+        return {'error': 'Unknown key type' + signingKeyType}, 400
     
     if alg == 'jose' and signingKeyType != 'jwk':
         # JOSE-driven algorithm choice only available for JWK formatted keys
-        return {
-            'statusCode': 400,
-            'headers': {
-                "Access-Control-Allow-Origin": "*"
-            },
-            'body': json.dumps({
-                'error': 'JOSE signing algorithm requires JWK formatted key'
-            })
-        }
+        return {'error': 'JOSE signing algorithm requires JWK formatted key'}, 400
     
     try:
         verified = False
@@ -442,15 +301,8 @@ def verify(event, context):
             # we're doing JOSE algs based on the key value
             if (not 'alg' in jwk) or (jwk['alg'] == 'none'):
                 # unknown algorithm
-                return {
-                    'statusCode': 400,
-                    'headers': {
-                        "Access-Control-Allow-Origin": "*"
-                    },
-                    'body': json.dumps({
-                        'error': 'Algorithm not found in JWK'
-                    })
-                }
+                return {'error': 'Algorithm not found in JWK'}, 400
+
             elif jwk['alg'] == 'RS256':
                 h = SHA256.new(siginput.encode('utf-8'))
                 verifier = pkcs1_15.new(key)
@@ -522,26 +374,12 @@ def verify(event, context):
                 verified = True
             else:
                 # unknown algorithm
-                return {
-                    'statusCode': 400,
-                    'headers': {
-                        "Access-Control-Allow-Origin": "*"
-                    },
-                    'body': json.dumps({
-                        'error': 'Unknown JWK algorithm: ' + jwk['alg']
-                    })
-                }
+                return {'error': 'Unknown JWK algorithm: ' + jwk['alg']}, 400
+
         else:
             # unknown algorithm
-            return {
-                'statusCode': 400,
-                'headers': {
-                    "Access-Control-Allow-Origin": "*"
-                },
-                'body': json.dumps({
-                    'error': 'Unknown algorithm: ' + alg
-                })
-            }
+            return {'error': 'Unknown algorithm: ' + alg}, 400
+
     except (ValueError, TypeError) as err:
         verified = False
 
@@ -549,14 +387,7 @@ def verify(event, context):
         'signatureVerified': verified
     }
     
-    return {
-        'statusCode': 200,
-        'headers': {
-            "Access-Control-Allow-Origin": "*"
-        },
-        'body': json.dumps(response)
-    }
-
+    return response
 
 def parseKeyJwk(signingKey):
     
@@ -697,4 +528,8 @@ def parseKeyX509(signingKey):
 
     #print(11)
     return key
-    
+
+@app.route('/', defaults={'path': 'index.html'})
+@app.route('/<path:path>')
+def serve_static_file(path):
+    return app.send_static_file(path)

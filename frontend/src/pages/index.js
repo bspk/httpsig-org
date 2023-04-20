@@ -13,8 +13,9 @@ import { Button, ButtonGroup, Tabs, Container, Section, Level, Form, Columns, Co
 
 //const api = 'https://grb8qjtvye.execute-api.us-east-1.amazonaws.com/dev' // bspk test
 //const api = 'https://o52ky0nc31.execute-api.ca-central-1.amazonaws.com/dev' // secureKey install
-const api = 'https://rntmg89xu9.execute-api.us-east-1.amazonaws.com/dev' // avast install
+//const api = 'https://rntmg89xu9.execute-api.us-east-1.amazonaws.com/dev' // avast install
 //const api = 'http://localhost:3000/dev'
+const api = ''; // use api on same host
 
 class HttpSigForm extends React.Component {
   constructor(props) {

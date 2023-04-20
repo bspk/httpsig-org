@@ -17,7 +17,7 @@ const Layout = ({ children }) => (
             </Hero.Body>
           </Hero>
           {children}
-          <Footer>This service is provided by <a href="https://bspk.io/">Bespoke Engineering</a> and <a href="https://securekey.com">SecureKey</a>. The source is available <a href="https://github.com/bspk/httpsig-org/">on GitHub</a>.</Footer>
+          <Footer>This service is provided by <a href="https://bspk.io/">Bespoke Engineering</a> and <a href="https://www.authlete.com">Authlete</a>. The source is available <a href="https://github.com/bspk/httpsig-org/">on GitHub</a>.</Footer>
       </Container>
   </>
 )
