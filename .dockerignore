@@ -1,0 +1,7 @@
+Dockerfile
+.git
+README.md
+frontend/node_modules
+frontend/public
+frontend/.cache
+backend/__pycache__
