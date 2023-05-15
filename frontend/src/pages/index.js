@@ -35,7 +35,7 @@ class HttpSigForm extends React.Component {
       created: undefined,
       expires: undefined,
       nonce: undefined,
-      context: undefined,
+      tag: undefined,
       signatureInput: undefined,
       signatureParams: undefined,
       inputSignatures: undefined,
@@ -314,9 +314,9 @@ Signature: sig=:cjya2ClOLXO3VMT9EhIggRvh1kKsYuMxonvQOSslX4+l1I9+l+1MJzLehpM/ysdx
     });
   }
   
-  setContext = (e) => {
+  setTag = (e) => {
     this.setState({
-      context: e.target.value
+      tag: e.target.value
     });
   }
 
@@ -333,7 +333,7 @@ Signature: sig=:cjya2ClOLXO3VMT9EhIggRvh1kKsYuMxonvQOSslX4+l1I9+l+1MJzLehpM/ysdx
         created: this.state.created,
         expires: this.state.expires,
         nonce: this.state.nonce,
-        context: this.state.context
+        tag: this.state.tag
       };
     }
     
@@ -770,7 +770,7 @@ MCowBQYDK2VwAyEAJrQLj5P/89iXES9+vFgrIy29clF9CC/oPPsw3c5D0bs=
         		</Form.Field>
         		<Form.Field>
               <label>
-                <input type="checkbox" checked={this.state.showRelatedMsg} onChange={this.setShowRelatedMsg} /> Send Related-Request Message Context
+                <input type="checkbox" checked={this.state.showRelatedMsg} onChange={this.setShowRelatedMsg} /> Send Related-Request Message Context (for responses)
               </label>
             {this.state.showRelatedMsg && 
         			<Form.Control>
@@ -878,9 +878,9 @@ MCowBQYDK2VwAyEAJrQLj5P/89iXES9+vFgrIy29clF9CC/oPPsw3c5D0bs=
               </Form.Control>
             </Form.Field>
             <Form.Field>
-              <Form.Label>Context</Form.Label>
+              <Form.Label>Tag</Form.Label>
               <Form.Control>
-        				<Form.Input onChange={this.setContext} value={this.state.context ? this.state.context : ''} />
+        				<Form.Input onChange={this.setTag} value={this.state.tag ? this.state.tag : ''} />
               </Form.Control>
             </Form.Field>
           </Section>
