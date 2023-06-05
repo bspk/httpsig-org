@@ -2,6 +2,6 @@ http-parser==0.9.0
 http-sfv==0.9.1
 pycryptodomex==3.10.1
 pynacl==1.4.0
-httpsigpy==0.0.6
+httpsigpy==0.0.8
 flask==2.2.3
 gunicorn==20.1.0
