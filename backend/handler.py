@@ -40,17 +40,32 @@ mgf384 = lambda x, y: MGF1(x, y, SHA384)
 # used with jose PS256
 mgf256 = lambda x, y: MGF1(x, y, SHA256)
 
+@app.errorhandler(Exception)
+def handle_exception(e):
+    response = {
+        'error': str(e)
+    }
+    
+    return response, 500
+
 @app.post("/parse")
 def parse():
     data = request.json
     
-    msg = data['msg'].encode('utf-8')
+    msg = data['msg']
+    lines = msg.split('\n')
+    lines = combine_8792(lines)
+    msg = '\n'.join(lines).encode('utf-8')
+    
     response = {
         'components': parse_components(msg)
     }
     
     if 'req' in data:
-        req = data['req'].encode('utf-8')
+        req = data['req']
+        lines = req.split('\n')
+        lines = combine_8792(lines)
+        req = '\n'.join(lines).encode('utf-8')
         response['reqComponents'] = parse_components(req, True)
     
     return response
@@ -533,3 +548,24 @@ def parseKeyX509(signingKey):
 @app.route('/<path:path>')
 def serve_static_file(path):
     return app.send_static_file(path)
+
+
+# Copied from rfc_http_validate
+def combine_8792(lines):
+    if not "NOTE: '\\' line wrapping per RFC 8792" in lines[0]:
+        return lines
+    lines = lines[2:]
+    output = []  # type: List[str]
+    continuation = False
+    for line in lines:
+        prev_continuation = continuation
+        if line.endswith("\\"):
+            continuation = True
+            line = line[:-1]
+        else:
+            continuation = False
+        if prev_continuation:
+            output[-1] += line.lstrip()
+        else:
+            output.append(line)
+    return output

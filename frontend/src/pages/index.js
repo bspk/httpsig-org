@@ -9,7 +9,7 @@ import { faClock, faPlusSquare, faTrash, faPenFancy, faCheckSquare } from '@fort
 
 
 
-import { Button, ButtonGroup, Tabs, Container, Section, Level, Form, Columns, Content, Heading, Box, Icon, Tag, TagGroup } from 'react-bulma-components';
+import { Button, ButtonGroup, Tabs, Container, Section, Level, Form, Columns, Content, Heading, Box, Icon, Tag, TagGroup, Hero } from 'react-bulma-components';
 
 //const api = 'https://grb8qjtvye.execute-api.us-east-1.amazonaws.com/dev' // bspk test
 //const api = 'https://o52ky0nc31.execute-api.ca-central-1.amazonaws.com/dev' // secureKey install
@@ -50,6 +50,7 @@ class HttpSigForm extends React.Component {
       signatureParams: undefined,
       verifySignature: undefined,
       signatureVerified: undefined,
+      error: undefined,
       stage: 'input' // can be: input, params, material, output
     };
   }
@@ -70,6 +71,12 @@ class HttpSigForm extends React.Component {
   setRelatedMsg = (e) => {
     this.setState({
       relatedMsg: e.target.value
+    });
+  }
+  
+  clearError = (e) => {
+    this.setState({
+      error: undefined
     });
   }
 
@@ -156,7 +163,11 @@ Signature: sig=:cjya2ClOLXO3VMT9EhIggRvh1kKsYuMxonvQOSslX4+l1I9+l+1MJzLehpM/ysdx
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify(body)
     }).then(response => {
-      return response.json()
+      if (response.ok) {
+        return response.json();
+      } else {
+        throw new Error(response.json()['error']);
+      }
     }).then(data => {
       var components = data['components'];
       var reqComponents = data['reqComponents']
@@ -187,7 +198,7 @@ Signature: sig=:cjya2ClOLXO3VMT9EhIggRvh1kKsYuMxonvQOSslX4+l1I9+l+1MJzLehpM/ysdx
       this.setState({
         availableComponents: availableComponents,
         coveredComponents: [],
-        inputSignatures: data['inputSignatures'],
+        inputSignatures: components['inputSignatures'],
         parsedComponents: components,
         parsedRelatedComponents: reqComponents,
         existingSignature: undefined,
@@ -197,6 +208,11 @@ Signature: sig=:cjya2ClOLXO3VMT9EhIggRvh1kKsYuMxonvQOSslX4+l1I9+l+1MJzLehpM/ysdx
           this.setExistingSignature(Object.keys(this.state.inputSignatures)[0]);
         }
         document.getElementById('stages').scrollIntoView({behavior: 'smooth'});
+      });
+    })
+    .catch(e => {
+      this.setState({
+        error: e.message
       });
     });
   }
@@ -349,7 +365,11 @@ Signature: sig=:cjya2ClOLXO3VMT9EhIggRvh1kKsYuMxonvQOSslX4+l1I9+l+1MJzLehpM/ysdx
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify(body)
     }).then(response => {
-      return response.json()
+      if (response.ok) {
+        return response.json()
+      } else {
+        throw new Error(response.json()['error']);
+      }
     }).then(data => {
       this.setState({
         signatureInput: data['signatureInput'],
@@ -357,6 +377,11 @@ Signature: sig=:cjya2ClOLXO3VMT9EhIggRvh1kKsYuMxonvQOSslX4+l1I9+l+1MJzLehpM/ysdx
         stage: 'material'
       }, () => {
         document.getElementById('stages').scrollIntoView({behavior: 'smooth'});
+      });
+    })
+    .catch(e => {
+      this.setState({
+        error: e.message
       });
     });
   }
@@ -375,7 +400,16 @@ Signature: sig=:cjya2ClOLXO3VMT9EhIggRvh1kKsYuMxonvQOSslX4+l1I9+l+1MJzLehpM/ysdx
   setExistingSignature = (sel) => {
     if (sel && sel != this.state.existingSignature) {
       var sig = this.state.inputSignatures[sel];
-      var coveredComponents = sig['coveredComponents'];
+      var sigCovered = sig['coveredComponents'];
+      // collect covered components
+      var coveredComponents = [];
+      var avail = this.state.availableComponents;
+      sigCovered.forEach(c => {
+        console.log(avail);
+        console.log(c);
+        var comp = avail[c['id']].find(x => x['cid'] === c['cid']);
+        coveredComponents.push(comp);
+      });
       var alg = sig['params']['alg'];
       var created = sig['params']['created'];
       var expires = sig['params']['expires'];
@@ -474,6 +508,7 @@ MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEqIVYZVLCrPZHGHjP17CTW0/+D9Lf
 w0EkjqF7xB4FivAxzic30tMM4GF+hR6Dxh71Z50VGGdldkkDXZCnTNnoXQ==
 -----END PUBLIC KEY-----
       `,
+      alg: 'ecdsa-p256-sha256',
       signingKeyType: 'x509'
     });
   }
@@ -633,7 +668,11 @@ MCowBQYDK2VwAyEAJrQLj5P/89iXES9+vFgrIy29clF9CC/oPPsw3c5D0bs=
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify(body)
     }).then(response => {
-      return response.json()
+      if (response.ok) {
+        return response.json();
+      } else {
+        throw new Error(response.json()['error']);
+      }
     }).then(data => {
       this.setState({
         signatureOutput: data['signatureOutput'],
@@ -641,6 +680,11 @@ MCowBQYDK2VwAyEAJrQLj5P/89iXES9+vFgrIy29clF9CC/oPPsw3c5D0bs=
         stage: 'output'
       }, () => {
         document.getElementById('stages').scrollIntoView({behavior: 'smooth'});
+      });
+    })
+    .catch(e => {
+      this.setState({
+        error: e.message
       });
     });
   }
@@ -685,13 +729,22 @@ MCowBQYDK2VwAyEAJrQLj5P/89iXES9+vFgrIy29clF9CC/oPPsw3c5D0bs=
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify(body)
     }).then(response => {
-      return response.json()
+      if (response.ok) {
+        return response.json();
+      } else {
+        throw new Error(response.json()['error']);
+      }
     }).then(data => {
       this.setState({
         signatureVerified: data['signatureVerified'],
         stage: 'output'
       }, () => {
         document.getElementById('stages').scrollIntoView({behavior: 'smooth'});
+      });
+    })
+    .catch(e => {
+      this.setState({
+        error: e.message
       });
     });
   }
@@ -754,6 +807,15 @@ MCowBQYDK2VwAyEAJrQLj5P/89iXES9+vFgrIy29clF9CC/oPPsw3c5D0bs=
         inverted={this.state.stage !== 'output'}
         onClick={this.setStage('output')}>Output</Button>
       </Heading>
+      {this.state.error && (
+        <Box id="input" color="danger">
+        <Hero color="danger">
+          <Hero.Header>Error</Hero.Header>
+          <Hero.Body>{this.state.error}</Hero.Body>
+          <Hero.Footer><Button onClick={this.clearError}>Close</Button></Hero.Footer>
+        </Hero>
+        </Box>
+      )}
       {this.state.stage === 'input' && (
         <Box id="input">
           <Heading>Input</Heading>
