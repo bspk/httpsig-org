@@ -868,7 +868,7 @@ MCowBQYDK2VwAyEAJrQLj5P/89iXES9+vFgrIy29clF9CC/oPPsw3c5D0bs=
               <Form.Label>Explicit Signature Algorithm</Form.Label>
               <Form.Control>
         				<Form.Select onChange={this.setAlgParam} value={this.state.algParam}>
-                  <option value="">Not Speficied</option>
+                  <option value="">Not Specified</option>
                   <option value="rsa-pss-sha512">RSA PSS</option>
                   <option value="ecdsa-p256-sha256">ECDSA</option>
                   <option value="hmac-sha256">HMAC</option>
