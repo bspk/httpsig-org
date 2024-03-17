@@ -1,7 +1,7 @@
 # syntax = docker/dockerfile:1.3
 
 FROM --platform=$BUILDPLATFORM node:18.16.0-alpine3.17 AS frontend-builder
-ENV NODE_OPTIONS=--openssl-legacy-provider
+#ENV NODE_OPTIONS=--openssl-legacy-provider
 RUN apk add autoconf automake libtool make tiff jpeg zlib zlib-dev pkgconf nasm file gcc musl-dev util-linux && yarn global add gatsby-cli && gatsby telemetry --disable
 WORKDIR /build
 COPY frontend/package.json frontend/yarn.lock ./

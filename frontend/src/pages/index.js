@@ -1,15 +1,17 @@
 import React, {memo} from 'react';
 import Moment from 'react-moment';
 import Layout from '../components/layout';
+import libraryList from '../components/libraries';
 
 import { decodeItem, decodeList, decodeDict, encodeItem, encodeList, encodeDict} from 'structured-field-values';
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faClock, faPlusSquare, faTrash, faPenFancy, faCheckSquare, faFileSignature, faFileContract, faBook } from '@fortawesome/free-solid-svg-icons';
+import { faClock, faPlusSquare, faTrash, faPenFancy, faCheckSquare, faFileSignature, faFileContract, faBook, faCircleXmark, faCircleCheck, faScrewdriverWrench, faCodeBranch } from '@fortawesome/free-solid-svg-icons';
+import { faJava, faJs, faGolang, faPhp, faPython, faRust } from '@fortawesome/free-brands-svg-icons';
 
 
 
-import { Button, ButtonGroup, Tabs, Container, Section, Level, Form, Columns, Content, Heading, Box, Icon, Tag, TagGroup, Hero } from 'react-bulma-components';
+import { Button, ButtonGroup, Tabs, Container, Section, Level, Form, Columns, Content, Heading, Box, Icon, Tag, TagGroup, Hero, Tile, Card } from 'react-bulma-components';
 
 //const api = 'https://grb8qjtvye.execute-api.us-east-1.amazonaws.com/dev' // bspk test
 //const api = 'https://o52ky0nc31.execute-api.ca-central-1.amazonaws.com/dev' // secureKey install
@@ -74,10 +76,122 @@ class Selector extends React.Component {
       </Tabs>
       {this.state.mode === 'sign' && <HttpSigForm mode={this.state.mode} stage={this.state.stage} setStage={this.setStage} />}
       {this.state.mode === 'verify' && <HttpSigForm mode={this.state.mode} stage={this.state.stage} setStage={this.setStage} />}
+      {this.state.mode === 'libraries' && <Libraries />}
       </>
     );
   }
 }
+
+const LanguageIcon = ({...props}) => {
+  if (props.language === 'Java') {
+    return (
+      <Icon>
+        <FontAwesomeIcon icon={faJava} />
+      </Icon>
+    );
+  } else if (props.language === 'Go') {
+    return (
+      <Icon>
+        <FontAwesomeIcon icon={faGolang} />
+      </Icon>
+    );
+  } else if (props.language === 'JavaScript') {
+    return (
+      <Icon>
+        <FontAwesomeIcon icon={faJs} />
+      </Icon>
+    );
+  } else if (props.language === 'PHP') {
+    return (
+      <Icon>
+        <FontAwesomeIcon icon={faPhp} />
+      </Icon>
+    );
+  } else if (props.language === 'Python') {
+    return (
+      <Icon>
+        <FontAwesomeIcon icon={faPython} />
+      </Icon>
+    );
+  } else if (props.language === 'Rust') {
+    return (
+      <Icon>
+        <FontAwesomeIcon icon={faRust} />
+      </Icon>
+    );
+  } else {
+    return null;
+  }
+};
+
+const YesNo = ({...props}) => {
+  if (props.val) {
+    return (
+      <li className="has-text-success">
+        <Icon>
+          <FontAwesomeIcon icon={faCircleCheck} />
+        </Icon>
+      {props.label}
+      </li>
+    );
+  } else {
+    return (
+      <li className="has-text-danger">
+        <Icon>
+          <FontAwesomeIcon icon={faCircleXmark} />
+        </Icon>
+      {props.label}
+      </li>
+    );
+  }
+};
+
+const MaintainerLink = ({...props}) => {
+  if (props.maintainerLink) {
+    return (
+      <a href={props.maintainerLink}>{props.maintainer}</a>
+    );
+  } else {
+    return props.maintainer;
+  }
+}
+
+const Libraries = ({...props}) => {
+  const cards = libraryList.map(l => {
+    return (
+    <Tile renderAs={Card} kind="child" size={4}>
+    <Card.Content>
+      <ul>
+      <li className="has-background-primary-light">
+        <b><LanguageIcon language={l.language} /> {l.language}</b>
+      </li>
+      <YesNo val={l.sign} label="Sign" />
+      <YesNo val={l.verify} label="Verify" />
+      <li>
+        <Icon>
+          <FontAwesomeIcon icon={faScrewdriverWrench} />
+        </Icon>
+        <b>Maintainer:</b> <MaintainerLink maintainer={l.maintainer} maintainerLink={l.maintainerLink} />
+      </li>
+      <li>
+        <Icon>
+          <FontAwesomeIcon icon={faCodeBranch} />
+        </Icon>
+        <a href={l.repo}>Visit Resository</a>
+      </li>
+      </ul>
+    </Card.Content>
+    </Tile>
+    );
+  });
+  
+  return (
+    <Tile kind="ancestor" className="libraries">
+    {cards}
+    </Tile>
+  );
+  
+};
 
 
 class HttpSigForm extends React.Component {
@@ -267,9 +381,6 @@ Signature: sig=:cjya2ClOLXO3VMT9EhIggRvh1kKsYuMxonvQOSslX4+l1I9+l+1MJzLehpM/ysdx
         if (this.props.mode === 'verify' && this.state.inputSignatures) {
           this.setExistingSignature(Object.keys(this.state.inputSignatures)[0]);
         }
-        console.log(">> params");
-        console.log(this.props.stage);
-        console.log(this.props.setStage);
         this.props.setStage('params');
         document.getElementById('stages').scrollIntoView({behavior: 'smooth'});
       });

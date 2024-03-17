@@ -5,7 +5,7 @@
   "description": "HTTP Signature Playground",
   "author": "Justin Richer",
   "keywords": [
-    "gatsby"
+    "http", "httpsig", "rfc9421"
   ],
   "scripts": {
     "develop": "gatsby develop",
@@ -15,8 +15,9 @@
     "clean": "gatsby clean"
   },
   "dependencies": {
-    "@fortawesome/fontawesome-svg-core": "^1.2.36",
+    "@fortawesome/fontawesome-svg-core": "^6.1.0",
     "@fortawesome/free-solid-svg-icons": "^6.5.1",
+    "@fortawesome/free-brands-svg-icons": "^6.5.1",
     "@fortawesome/react-fontawesome": "^0.2.0",
     "@mdx-js/mdx": "^1.6.22",
     "@mdx-js/react": "^1.6.22",
