@@ -295,14 +295,25 @@ Content-Length: 18
 
   loadExampleSignedRequest = (e) => {
     this.setState({
-      httpMsg: `POST /foo?param=value&pet=dog HTTP/1.1
+      httpMsg: `NOTE: '\\' line wrapping per RFC 8792
+
+POST /foo?param=value&pet=dog HTTP/1.1
 Host: example.com
 Date: Tue, 20 Apr 2021 02:07:55 GMT
 Content-Type: application/json
-Content-Digest: sha-256=:X48E9qOokqqrvdts8nOJRJN3OWDUoyWxBf7kbu9DBPE=:
+Content-Digest: sha-512=:WZDPaVn/7XgHaAy8pmojAkGWoRx2UFChF41A2svX+T\\
+  aPm+AbwAgBWnrIiYllu7BNNyealdVLvRwEmTHWXvJwew==:
 Content-Length: 18
-Signature-Input: sig=("@method" "@authority" "@path" "@query" "content-type" "content-digest" "content-length");created=1622749937;keyid="RSA (X.509 preloaded)";alg="rsa-pss-sha512"
-Signature: sig=:BUt1JQp5SEvVDJmUqINLredbW0ktaGp423eRutpTfHiXgU8bhePTSebGqMoYm/Def8rJpdtbYRzNHUX8OzsAL0w6MKqk0Hvc6GuCzw+WLAIl/ZnOtR+AjOejYgbG+mZx5mb+N+M0DOh6tQpRxuAa/FA4uRAXr+r2dE7w8JeiY+fW38DiiurSVLW3zNgoTeCFnR/HI+8LWFUnm5nezkNAdpLduFW1Kdb1J7HOo2RvT/YsHGaNIHszyTfcVCnumtFCBHajvD9ktDvHwLM3vRJ/PwyUjeItD7trfYxGDPqNMUy7lcZT4HlJFOeEQlze2wL3+4fKVEYXV0IkvezVuFEtjA==:
+Signature-Input: sig=("@method" "@authority" "@path" "@query" \\
+  "content-digest" "content-length" "content-type")\\
+  ;alg="rsa-pss-sha512";created=1618884473\\
+  ;keyid="RSA (X.509 preloaded)"
+Signature: sig=:k2kD1VAw9TOA72zoDzt3ZAOdjhOg9edgBYqsvyQb5mBnwzY/fKz\\
+  5W30tZud9YA4o8NfCYh8VnW5m4fxFsWCTOOQbrsWXmmGSKtblfi3o5DxlHJcUkrAH\\
+  /d13tmy7r2Jtipjrhv6Ca67VU9z1Q2S8Zd87sNxFnyhIxX+CiKJ+i+P6XfJfeTbCV\\
+  UIo8cTTqLD9go9xdZ8sSUkU9kDy5WxghbbPV/y9rmmigO0y3qxI8/UGZ/OWhsN13O\\
+  zvE0SBj8tCYQ8qlh20zjNmJm0GN62RJXK0dX1h83Gh0IIXGPPmWQNCavO4hAbY3eW\\
+  7nhGdEjlh364x8dd323UKuMfuwqYEyg==:
 
 {"hello": "world"}`,
       relatedMsg: ''
@@ -311,13 +322,23 @@ Signature: sig=:BUt1JQp5SEvVDJmUqINLredbW0ktaGp423eRutpTfHiXgU8bhePTSebGqMoYm/De
 
   loadExampleSignedResponse = (e) => {
     this.setState({
-      httpMsg: `HTTP/1.1 200 OK
+      httpMsg: `NOTE: '\\' line wrapping per RFC 8792
+      
+HTTP/1.1 200 OK
 Date: Tue, 20 Apr 2021 02:07:56 GMT
 Content-Type: application/json
-Content-Digest: sha-256=:X48E9qOokqqrvdts8nOJRJN3OWDUoyWxBf7kbu9DBPE=:
+Content-Digest: sha-512=:WZDPaVn/7XgHaAy8pmojAkGWoRx2UFChF41A2svX+T\\
+  aPm+AbwAgBWnrIiYllu7BNNyealdVLvRwEmTHWXvJwew==:
 Content-Length: 18
-Signature-Input: sig=("content-digest" "content-type" "content-length" "@status");created=1622749937;keyid="RSA (X.509 preloaded)";alg="rsa-pss-sha512"
-Signature: sig=:cjya2ClOLXO3VMT9EhIggRvh1kKsYuMxonvQOSslX4+l1I9+l+1MJzLehpM/ysdxTEC+5X/8Gtcw8wMu1sRbpQcJjwHZ3vkt5OFJG9jgppGwrYEDb2+uCAooprRc59Ch7NcwBq7P8tBgvVVuk4phE7hAXQeCbGqOtynv5SoAusOiBKylhatJKUmaz0vAEUaUs2DIhlzeoOBlZkA45zxyuu1bQKD623E6/Ec3EBRwkWd8vlV8iQLiYv++ROlAzhAo3gTSNyxPD0hcvuoE+MVN6eAvpILp+TTcMzrNu1iPiQAPqE9o60Cqj6orKoa+sj+ZDWY1hauDJ5bD0d6ic1eCXA==:
+Signature-Input: sig=("@status" "content-digest" "content-length" \\
+  "content-type");alg="rsa-pss-sha512";created=1618884473\\
+  ;keyid="RSA (X.509 preloaded)"
+Signature: sig=:SfHwLLMHetROs/nmZoKFbxwJhlgVt5pwWc0Ag7yuDfTxB1RaX8x\\
+  4Fscdb5ZZJ5j9K/r7Q58jOxKpmBGv3bHeeFa2LRbjntzvlnbntAi4t6ZzYAoBMQdt\\
+  oOvORqRdGE5iR3crLacJn+CPu7iupDiu4e4dBRbN2fYHZWm/1r15kgU2gTQym2Qcp\\
+  0FZspzNmxmo3iOLQJaeKx5QmRYE6oFM5OYw1kOdaTlLl26M9wNonBCrMrDrG0/qfm\\
+  hxfG/C8zeexbL+FVjUqx/4NqdIu0spcBSat2Fo08N6tT/SWhmLN4B2Lu3eyVLUp/G\\
+  zekHFdvZiLULkfLh7e9b5dKqevsgtJw==:
 
 {"hello": "world"}`,
       relatedMsg: ''
