@@ -1,15 +1,17 @@
 import React, {memo} from 'react';
 import Moment from 'react-moment';
 import Layout from '../components/layout';
+import libraryList from '../components/libraries';
 
 import { decodeItem, decodeList, decodeDict, encodeItem, encodeList, encodeDict} from 'structured-field-values';
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faClock, faPlusSquare, faTrash, faPenFancy, faCheckSquare } from '@fortawesome/fontawesome-free-solid';
+import { faClock, faPlusSquare, faTrash, faPenFancy, faCheckSquare, faFileSignature, faFileContract, faBook, faCircleXmark, faCircleCheck, faScrewdriverWrench, faCodeBranch } from '@fortawesome/free-solid-svg-icons';
+import { faJava, faJs, faGolang, faPhp, faPython, faRust } from '@fortawesome/free-brands-svg-icons';
 
 
 
-import { Button, ButtonGroup, Tabs, Container, Section, Level, Form, Columns, Content, Heading, Box, Icon, Tag, TagGroup, Hero } from 'react-bulma-components';
+import { Button, ButtonGroup, Tabs, Container, Section, Level, Form, Columns, Content, Heading, Box, Icon, Tag, TagGroup, Hero, Tile, Card } from 'react-bulma-components';
 
 //const api = 'https://grb8qjtvye.execute-api.us-east-1.amazonaws.com/dev' // bspk test
 //const api = 'https://o52ky0nc31.execute-api.ca-central-1.amazonaws.com/dev' // secureKey install
@@ -17,11 +19,187 @@ import { Button, ButtonGroup, Tabs, Container, Section, Level, Form, Columns, Co
 //const api = 'http://localhost:3000/dev'
 const api = ''; // use api on same host
 
-class HttpSigForm extends React.Component {
+class Selector extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
       mode: 'sign', // can be 'sign' or 'verify'
+      stage: 'input' // can be: input, params, material, output
+    }
+  }
+  
+  setMode = (mode) => (e) => {
+    e.preventDefault();
+    this.setState({
+      mode: mode,
+      stage: 'input'
+    });
+  }
+
+  setStage = (stage) => {
+    this.setState({
+      stage: stage
+    });
+  }
+  
+  
+  
+  render = () => {
+    return (
+      <>
+      <Tabs
+        fullwidth
+        type='boxed'
+        size='large'
+      >
+        <Tabs.Tab
+          active={this.state.mode === 'sign'}
+          onClick={this.setMode('sign')}>
+          <Icon>
+            <FontAwesomeIcon icon={faFileSignature} />
+          </Icon>
+          Sign</Tabs.Tab>
+        <Tabs.Tab
+          active={this.state.mode === 'verify'}
+          onClick={this.setMode('verify')}>
+          <Icon>
+            <FontAwesomeIcon icon={faFileContract} />
+          </Icon>
+          Verify</Tabs.Tab>
+        <Tabs.Tab
+          active={this.state.mode === 'libraries'}
+          onClick={this.setMode('libraries')}>
+          <Icon>
+            <FontAwesomeIcon icon={faBook} />
+          </Icon>
+          Libraries</Tabs.Tab>
+      </Tabs>
+      {this.state.mode === 'sign' && <HttpSigForm mode={this.state.mode} stage={this.state.stage} setStage={this.setStage} />}
+      {this.state.mode === 'verify' && <HttpSigForm mode={this.state.mode} stage={this.state.stage} setStage={this.setStage} />}
+      {this.state.mode === 'libraries' && <Libraries />}
+      </>
+    );
+  }
+}
+
+const LanguageIcon = ({...props}) => {
+  if (props.language === 'Java') {
+    return (
+      <Icon>
+        <FontAwesomeIcon icon={faJava} />
+      </Icon>
+    );
+  } else if (props.language === 'Go') {
+    return (
+      <Icon>
+        <FontAwesomeIcon icon={faGolang} />
+      </Icon>
+    );
+  } else if (props.language === 'JavaScript') {
+    return (
+      <Icon>
+        <FontAwesomeIcon icon={faJs} />
+      </Icon>
+    );
+  } else if (props.language === 'PHP') {
+    return (
+      <Icon>
+        <FontAwesomeIcon icon={faPhp} />
+      </Icon>
+    );
+  } else if (props.language === 'Python') {
+    return (
+      <Icon>
+        <FontAwesomeIcon icon={faPython} />
+      </Icon>
+    );
+  } else if (props.language === 'Rust') {
+    return (
+      <Icon>
+        <FontAwesomeIcon icon={faRust} />
+      </Icon>
+    );
+  } else {
+    return null;
+  }
+};
+
+const YesNo = ({...props}) => {
+  if (props.val) {
+    return (
+      <li className="has-text-success">
+        <Icon>
+          <FontAwesomeIcon icon={faCircleCheck} />
+        </Icon>
+      {props.label}
+      </li>
+    );
+  } else {
+    return (
+      <li className="has-text-danger">
+        <Icon>
+          <FontAwesomeIcon icon={faCircleXmark} />
+        </Icon>
+      {props.label}
+      </li>
+    );
+  }
+};
+
+const MaintainerLink = ({...props}) => {
+  if (props.maintainerLink) {
+    return (
+      <a href={props.maintainerLink}>{props.maintainer}</a>
+    );
+  } else {
+    return props.maintainer;
+  }
+}
+
+const Libraries = ({...props}) => {
+  const cards = libraryList.map(l => {
+    return (
+    <Tile kind="parent" size={4}>
+    <Tile renderAs={Card} kind="child">
+    <Card.Content>
+      <ul>
+      <li className="has-background-primary-light">
+        <b><LanguageIcon language={l.language} /> {l.language}</b>
+      </li>
+      <YesNo val={l.sign} label="Sign" />
+      <YesNo val={l.verify} label="Verify" />
+      <li>
+        <Icon>
+          <FontAwesomeIcon icon={faScrewdriverWrench} />
+        </Icon>
+        <b>Maintainer:</b> <MaintainerLink maintainer={l.maintainer} maintainerLink={l.maintainerLink} />
+      </li>
+      <li>
+        <Icon>
+          <FontAwesomeIcon icon={faCodeBranch} />
+        </Icon>
+        <a href={l.repo}>Visit Resository</a>
+      </li>
+      </ul>
+    </Card.Content>
+    </Tile>
+    </Tile>
+    );
+  });
+  
+  return (
+    <Tile kind="ancestor" className="libraries">
+    {cards}
+    </Tile>
+  );
+  
+};
+
+
+class HttpSigForm extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
       httpMsg: '',
       showRelatedMsg: false,
       relatedMsg: '',
@@ -50,8 +228,7 @@ class HttpSigForm extends React.Component {
       signatureParams: undefined,
       verifySignature: undefined,
       signatureVerified: undefined,
-      error: undefined,
-      stage: 'input' // can be: input, params, material, output
+      error: undefined
     };
   }
 
@@ -118,14 +295,25 @@ Content-Length: 18
 
   loadExampleSignedRequest = (e) => {
     this.setState({
-      httpMsg: `POST /foo?param=value&pet=dog HTTP/1.1
+      httpMsg: `NOTE: '\\' line wrapping per RFC 8792
+
+POST /foo?param=value&pet=dog HTTP/1.1
 Host: example.com
 Date: Tue, 20 Apr 2021 02:07:55 GMT
 Content-Type: application/json
-Content-Digest: sha-256=:X48E9qOokqqrvdts8nOJRJN3OWDUoyWxBf7kbu9DBPE=:
+Content-Digest: sha-512=:WZDPaVn/7XgHaAy8pmojAkGWoRx2UFChF41A2svX+T\\
+  aPm+AbwAgBWnrIiYllu7BNNyealdVLvRwEmTHWXvJwew==:
 Content-Length: 18
-Signature-Input: sig=("@method" "@authority" "@path" "@query" "content-type" "content-digest" "content-length");created=1622749937;keyid="RSA (X.509 preloaded)";alg="rsa-pss-sha512"
-Signature: sig=:BUt1JQp5SEvVDJmUqINLredbW0ktaGp423eRutpTfHiXgU8bhePTSebGqMoYm/Def8rJpdtbYRzNHUX8OzsAL0w6MKqk0Hvc6GuCzw+WLAIl/ZnOtR+AjOejYgbG+mZx5mb+N+M0DOh6tQpRxuAa/FA4uRAXr+r2dE7w8JeiY+fW38DiiurSVLW3zNgoTeCFnR/HI+8LWFUnm5nezkNAdpLduFW1Kdb1J7HOo2RvT/YsHGaNIHszyTfcVCnumtFCBHajvD9ktDvHwLM3vRJ/PwyUjeItD7trfYxGDPqNMUy7lcZT4HlJFOeEQlze2wL3+4fKVEYXV0IkvezVuFEtjA==:
+Signature-Input: sig=("@method" "@authority" "@path" "@query" \\
+  "content-digest" "content-length" "content-type")\\
+  ;alg="rsa-pss-sha512";created=1618884473\\
+  ;keyid="RSA (X.509 preloaded)"
+Signature: sig=:k2kD1VAw9TOA72zoDzt3ZAOdjhOg9edgBYqsvyQb5mBnwzY/fKz\\
+  5W30tZud9YA4o8NfCYh8VnW5m4fxFsWCTOOQbrsWXmmGSKtblfi3o5DxlHJcUkrAH\\
+  /d13tmy7r2Jtipjrhv6Ca67VU9z1Q2S8Zd87sNxFnyhIxX+CiKJ+i+P6XfJfeTbCV\\
+  UIo8cTTqLD9go9xdZ8sSUkU9kDy5WxghbbPV/y9rmmigO0y3qxI8/UGZ/OWhsN13O\\
+  zvE0SBj8tCYQ8qlh20zjNmJm0GN62RJXK0dX1h83Gh0IIXGPPmWQNCavO4hAbY3eW\\
+  7nhGdEjlh364x8dd323UKuMfuwqYEyg==:
 
 {"hello": "world"}`,
       relatedMsg: ''
@@ -134,13 +322,23 @@ Signature: sig=:BUt1JQp5SEvVDJmUqINLredbW0ktaGp423eRutpTfHiXgU8bhePTSebGqMoYm/De
 
   loadExampleSignedResponse = (e) => {
     this.setState({
-      httpMsg: `HTTP/1.1 200 OK
+      httpMsg: `NOTE: '\\' line wrapping per RFC 8792
+      
+HTTP/1.1 200 OK
 Date: Tue, 20 Apr 2021 02:07:56 GMT
 Content-Type: application/json
-Content-Digest: sha-256=:X48E9qOokqqrvdts8nOJRJN3OWDUoyWxBf7kbu9DBPE=:
+Content-Digest: sha-512=:WZDPaVn/7XgHaAy8pmojAkGWoRx2UFChF41A2svX+T\\
+  aPm+AbwAgBWnrIiYllu7BNNyealdVLvRwEmTHWXvJwew==:
 Content-Length: 18
-Signature-Input: sig=("content-digest" "content-type" "content-length" "@status");created=1622749937;keyid="RSA (X.509 preloaded)";alg="rsa-pss-sha512"
-Signature: sig=:cjya2ClOLXO3VMT9EhIggRvh1kKsYuMxonvQOSslX4+l1I9+l+1MJzLehpM/ysdxTEC+5X/8Gtcw8wMu1sRbpQcJjwHZ3vkt5OFJG9jgppGwrYEDb2+uCAooprRc59Ch7NcwBq7P8tBgvVVuk4phE7hAXQeCbGqOtynv5SoAusOiBKylhatJKUmaz0vAEUaUs2DIhlzeoOBlZkA45zxyuu1bQKD623E6/Ec3EBRwkWd8vlV8iQLiYv++ROlAzhAo3gTSNyxPD0hcvuoE+MVN6eAvpILp+TTcMzrNu1iPiQAPqE9o60Cqj6orKoa+sj+ZDWY1hauDJ5bD0d6ic1eCXA==:
+Signature-Input: sig=("@status" "content-digest" "content-length" \\
+  "content-type");alg="rsa-pss-sha512";created=1618884473\\
+  ;keyid="RSA (X.509 preloaded)"
+Signature: sig=:SfHwLLMHetROs/nmZoKFbxwJhlgVt5pwWc0Ag7yuDfTxB1RaX8x\\
+  4Fscdb5ZZJ5j9K/r7Q58jOxKpmBGv3bHeeFa2LRbjntzvlnbntAi4t6ZzYAoBMQdt\\
+  oOvORqRdGE5iR3crLacJn+CPu7iupDiu4e4dBRbN2fYHZWm/1r15kgU2gTQym2Qcp\\
+  0FZspzNmxmo3iOLQJaeKx5QmRYE6oFM5OYw1kOdaTlLl26M9wNonBCrMrDrG0/qfm\\
+  hxfG/C8zeexbL+FVjUqx/4NqdIu0spcBSat2Fo08N6tT/SWhmLN4B2Lu3eyVLUp/G\\
+  zekHFdvZiLULkfLh7e9b5dKqevsgtJw==:
 
 {"hello": "world"}`,
       relatedMsg: ''
@@ -202,11 +400,11 @@ Signature: sig=:cjya2ClOLXO3VMT9EhIggRvh1kKsYuMxonvQOSslX4+l1I9+l+1MJzLehpM/ysdx
         parsedComponents: components,
         parsedRelatedComponents: reqComponents,
         existingSignature: undefined,
-        stage: 'params'
       }, () => {
-        if (this.state.mode === 'verify' && this.state.inputSignatures) {
+        if (this.props.mode === 'verify' && this.state.inputSignatures) {
           this.setExistingSignature(Object.keys(this.state.inputSignatures)[0]);
         }
+        this.props.setStage('params');
         document.getElementById('stages').scrollIntoView({behavior: 'smooth'});
       });
     })
@@ -339,7 +537,7 @@ Signature: sig=:cjya2ClOLXO3VMT9EhIggRvh1kKsYuMxonvQOSslX4+l1I9+l+1MJzLehpM/ysdx
   generateSignatureInput = (e) => {
     e.preventDefault();
 
-    if (this.state.mode === 'verify' && this.state.existingSignature) {
+    if (this.props.mode === 'verify' && this.state.existingSignature) {
       var sig = this.state.inputSignatures[this.state.existingSignature];
       var params = sig['params'];
     } else {
@@ -374,8 +572,8 @@ Signature: sig=:cjya2ClOLXO3VMT9EhIggRvh1kKsYuMxonvQOSslX4+l1I9+l+1MJzLehpM/ysdx
       this.setState({
         signatureInput: data['signatureInput'],
         signatureParams: data['signatureParams'],
-        stage: 'material'
       }, () => {
+        this.props.setStage('material');
         document.getElementById('stages').scrollIntoView({behavior: 'smooth'});
       });
     })
@@ -677,8 +875,8 @@ MCowBQYDK2VwAyEAJrQLj5P/89iXES9+vFgrIy29clF9CC/oPPsw3c5D0bs=
       this.setState({
         signatureOutput: data['signatureOutput'],
         signatureHeaders: data['headers'],
-        stage: 'output'
       }, () => {
+        this.props.setStage('output');
         document.getElementById('stages').scrollIntoView({behavior: 'smooth'});
       });
     })
@@ -737,8 +935,8 @@ MCowBQYDK2VwAyEAJrQLj5P/89iXES9+vFgrIy29clF9CC/oPPsw3c5D0bs=
     }).then(data => {
       this.setState({
         signatureVerified: data['signatureVerified'],
-        stage: 'output'
       }, () => {
+        this.props.setStage('output');
         document.getElementById('stages').scrollIntoView({behavior: 'smooth'});
       });
     })
@@ -749,64 +947,46 @@ MCowBQYDK2VwAyEAJrQLj5P/89iXES9+vFgrIy29clF9CC/oPPsw3c5D0bs=
     });
   }
   
-  setStage = (stage) => (e) => {
-    e.preventDefault();
-    this.setState({
-      stage: stage
-    });
-  }
-  
-  setMode = (mode) => (e) => {
-    e.preventDefault();
-    this.setState({
-      mode: mode,
-      stage: 'input'
-    });
-  }
-
   render = () => {
     return (
       <>
       <Heading id="stages">
-      <Columns>
-      <Columns.Column size="half">
-      <Button
-        color={this.state.mode === 'sign' ? 'info' : 'grey'}
-        fullwidth
-        onClick={this.setMode('sign')}>
-        Sign</Button>
-      </Columns.Column>
-      <Columns.Column size="half">
-      <Button
-        color={this.state.mode === 'verify' ? 'info' : 'grey'}
-        fullwidth
-        onClick={this.setMode('verify')}>
-        Verify</Button>
-      </Columns.Column>
-      </Columns>
       <Button 
-        color={this.state.stage === 'input' ? 'primary' : 'info'}
-        inverted={this.state.stage !== 'input'}
-        onClick={this.setStage('input')}>Input</Button>
+        color={this.props.stage === 'input' ? 'primary' : 'info'}
+        inverted={this.props.stage !== 'input'}
+        onClick={(e) => {
+          e.preventDefault();
+          this.props.setStage('input')
+        }}>Input</Button>
       &raquo;
       <Button 
-        color={this.state.stage === 'params' ? 'primary' : 
-          this.state.stage === 'input' ? 'danger' : 'info'}
-        inverted={this.state.stage !== 'params'}
-        onClick={this.setStage('params')}>Parameters</Button>
+        color={this.props.stage === 'params' ? 'primary' : 
+          this.props.stage === 'input' ? 'danger' : 'info'}
+        inverted={this.props.stage !== 'params'}
+        onClick={(e) => {
+          e.preventDefault();
+          this.props.setStage('params')
+        }}>Parameters</Button>
       &raquo;
       <Button 
-        color={this.state.stage === 'material' ? 'primary'  : 
-          (this.state.stage === 'input' || this.state.stage ==='params') ? 'danger' : 'info'}
-        inverted={this.state.stage !== 'material'}
-        onClick={this.setStage('material')}>Material</Button>
+        color={this.props.stage === 'material' ? 'primary'  : 
+          (this.props.stage === 'input' || this.props.stage ==='params') ? 'danger' : 'info'}
+        inverted={this.props.stage !== 'material'}
+        onClick={(e) => {
+          e.preventDefault();
+          this.props.setStage('material')
+        }}>Material</Button>
       &raquo;
       <Button 
-        color={this.state.stage === 'output' ? 'primary' : 
-          (this.state.stage === 'input' || this.state.stage ==='params' || this.state.stage ==='material') ? 'danger' : 'info'}
-        inverted={this.state.stage !== 'output'}
-        onClick={this.setStage('output')}>Output</Button>
+        color={this.props.stage === 'output' ? 'primary' : 
+          (this.props.stage === 'input' || this.props.stage ==='params' || this.props.stage ==='material') ? 'danger' : 'info'}
+        inverted={this.props.stage !== 'output'}
+        onClick={(e) => {
+          e.preventDefault();
+          this.props.setStage('output')
+        }}>Output</Button>
       </Heading>
+      
       {this.state.error && (
         <Box id="input" color="danger">
         <Hero color="danger">
@@ -816,13 +996,13 @@ MCowBQYDK2VwAyEAJrQLj5P/89iXES9+vFgrIy29clF9CC/oPPsw3c5D0bs=
         </Hero>
         </Box>
       )}
-      {this.state.stage === 'input' && (
+      {this.props.stage === 'input' && (
         <Box id="input">
           <Heading>Input</Heading>
           <Section>
         		<Form.Label>HTTP Message</Form.Label>
-            {this.state.mode === 'sign' && <Button onClick={this.loadExampleRequest}>Example Request</Button>}
-            {this.state.mode === 'sign' && <Button onClick={this.loadExampleResponse}>Example Response</Button>}
+            {this.props.mode === 'sign' && <Button onClick={this.loadExampleRequest}>Example Request</Button>}
+            {this.props.mode === 'sign' && <Button onClick={this.loadExampleResponse}>Example Response</Button>}
             <Button onClick={this.loadExampleSignedRequest}>Example Signed Request</Button>
             <Button onClick={this.loadExampleSignedResponse}>Example Signed Response</Button>
         		<Form.Field>
@@ -846,11 +1026,11 @@ MCowBQYDK2VwAyEAJrQLj5P/89iXES9+vFgrIy29clF9CC/oPPsw3c5D0bs=
           </Section>
         </Box>
       )}
-      {this.state.stage === 'params' && (
+      {this.props.stage === 'params' && (
         <Box id="params">
           <Heading>Signature Parameters</Heading>
           <Section>
-            {this.state.mode === 'verify' && this.state.inputSignatures && (
+            {this.props.mode === 'verify' && this.state.inputSignatures && (
               <Form.Field>
                 <Form.Label>Use parameters from existing signature</Form.Label>
                 <Form.Control>
@@ -951,7 +1131,7 @@ MCowBQYDK2VwAyEAJrQLj5P/89iXES9+vFgrIy29clF9CC/oPPsw3c5D0bs=
           </Section>
         </Box>
       )}
-      {this.state.stage === 'material' && (
+      {this.props.stage === 'material' && (
         <Box id="material">
           <Heading>Signature Material</Heading>
           <Section>
@@ -976,12 +1156,12 @@ MCowBQYDK2VwAyEAJrQLj5P/89iXES9+vFgrIy29clF9CC/oPPsw3c5D0bs=
         		<Form.Label>Key material</Form.Label>
             {this.state.signingKeyType == 'x509' && (
               <>
-                {this.state.mode === 'sign' && <Button onClick={this.loadRsaPssPrivate}>RSA Private</Button>}
-                {this.state.mode === 'verify' && <Button onClick={this.loadRsaPssPublic}>RSA Public</Button>}
-                {this.state.mode === 'sign' && <Button onClick={this.loadEccPrivate}>ECC Private</Button>}
-                {this.state.mode === 'verify' && <Button onClick={this.loadEccPublic}>ECC Public</Button>}
-                {this.state.mode === 'sign' && <Button onClick={this.loadEdPrivate}>Ed25519 Private</Button>}
-                {this.state.mode === 'verify' && <Button onClick={this.loadEdPublic}>Ed25519 Public</Button>}
+                {this.props.mode === 'sign' && <Button onClick={this.loadRsaPssPrivate}>RSA Private</Button>}
+                {this.props.mode === 'verify' && <Button onClick={this.loadRsaPssPublic}>RSA Public</Button>}
+                {this.props.mode === 'sign' && <Button onClick={this.loadEccPrivate}>ECC Private</Button>}
+                {this.props.mode === 'verify' && <Button onClick={this.loadEccPublic}>ECC Public</Button>}
+                {this.props.mode === 'sign' && <Button onClick={this.loadEdPrivate}>Ed25519 Private</Button>}
+                {this.props.mode === 'verify' && <Button onClick={this.loadEdPublic}>Ed25519 Public</Button>}
             		<Form.Field>
             			<Form.Control>
         		        <Form.Textarea rows={10} spellCheck={false} onChange={this.setSigningKeyX509} value={this.state.signingKeyX509} />
@@ -991,9 +1171,9 @@ MCowBQYDK2VwAyEAJrQLj5P/89iXES9+vFgrIy29clF9CC/oPPsw3c5D0bs=
             )}
             {this.state.signingKeyType == 'jwk' && (
               <>
-                {this.state.mode === 'sign' && <Button onClick={this.loadRsaPrivateJwk}>RSA Private</Button>}
-                {this.state.mode === 'verify' && <Button onClick={this.loadRsaPublicJwk}>RSA Public</Button>}
-                {this.state.mode === 'sign' && <Button onClick={this.loadEccPrivateJwk}>ECC Private</Button>}
+                {this.props.mode === 'sign' && <Button onClick={this.loadRsaPrivateJwk}>RSA Private</Button>}
+                {this.props.mode === 'verify' && <Button onClick={this.loadRsaPublicJwk}>RSA Public</Button>}
+                {this.props.mode === 'sign' && <Button onClick={this.loadEccPrivateJwk}>ECC Private</Button>}
                 <Button onClick={this.loadSharedJwk}>Shared</Button>
             		<Form.Field>
             			<Form.Control>
@@ -1012,7 +1192,7 @@ MCowBQYDK2VwAyEAJrQLj5P/89iXES9+vFgrIy29clF9CC/oPPsw3c5D0bs=
               </>
             )}
           </Section>
-          {this.state.mode === 'sign' && (
+          {this.props.mode === 'sign' && (
           <Section>
             <Form.Field>
               <Form.Label>Label</Form.Label>
@@ -1037,12 +1217,12 @@ MCowBQYDK2VwAyEAJrQLj5P/89iXES9+vFgrIy29clF9CC/oPPsw3c5D0bs=
         			</Form.Control>
         		</Form.Field>
           </Section>
-          {this.state.mode === 'sign' && (
+          {this.props.mode === 'sign' && (
           <Section>
             <Button onClick={this.signInput}>Sign Signature Base</Button>
           </Section>
           )}
-          {this.state.mode === 'verify' && this.state.inputSignatures && (
+          {this.props.mode === 'verify' && this.state.inputSignatures && (
           <Section>
               <Form.Field>
                 <Form.Control>
@@ -1059,10 +1239,10 @@ MCowBQYDK2VwAyEAJrQLj5P/89iXES9+vFgrIy29clF9CC/oPPsw3c5D0bs=
           )}
         </Box>
       )}
-      {this.state.stage === 'output' && (
+      {this.props.stage === 'output' && (
         <Box id="output">
           <Heading>Output</Heading>
-          {this.state.mode === 'verify' && (
+          {this.props.mode === 'verify' && (
           <Section>
             <Form.Label>Signature Status</Form.Label>
             <Form.Field>
@@ -1077,7 +1257,7 @@ MCowBQYDK2VwAyEAJrQLj5P/89iXES9+vFgrIy29clF9CC/oPPsw3c5D0bs=
             )}
           </Section>
           )}
-          {this.state.mode === 'sign' && (
+          {this.props.mode === 'sign' && (
           <>
           <Section>
         		<Form.Label>Signature Value (in Base64)</Form.Label>
@@ -1099,6 +1279,7 @@ MCowBQYDK2VwAyEAJrQLj5P/89iXES9+vFgrIy29clF9CC/oPPsw3c5D0bs=
           )}
         </Box>
       )}
+      
       </>
     );
   }
@@ -1129,7 +1310,7 @@ const CoveredComponents = ({...props}) =>
 );
 
 const IndexPage = () => <Layout>
-  <HttpSigForm />
+  <Selector />
 </Layout>;
 
 export default IndexPage;
