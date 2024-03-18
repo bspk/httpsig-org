@@ -159,7 +159,8 @@ const MaintainerLink = ({...props}) => {
 const Libraries = ({...props}) => {
   const cards = libraryList.map(l => {
     return (
-    <Tile renderAs={Card} kind="child" size={4}>
+    <Tile kind="parent" size={4}>
+    <Tile renderAs={Card} kind="child">
     <Card.Content>
       <ul>
       <li className="has-background-primary-light">
@@ -181,6 +182,7 @@ const Libraries = ({...props}) => {
       </li>
       </ul>
     </Card.Content>
+    </Tile>
     </Tile>
     );
   });
