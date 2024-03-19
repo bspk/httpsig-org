@@ -29,6 +29,13 @@ const libraryList = [
     sign: true,
     verify: true
   },
+  {
+    language: 'Python',
+    maintainer: 'Andrey Kislyuk',
+    repo: 'https://github.com/pyauth/http-message-signatures',
+    sign: true,
+    verify: true
+  },
 ];
 
 export default libraryList;
