@@ -6,8 +6,8 @@ import libraryList from '../components/libraries';
 import { decodeItem, decodeList, decodeDict, encodeItem, encodeList, encodeDict} from 'structured-field-values';
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faClock, faPlusSquare, faTrash, faPenFancy, faCheckSquare, faFileSignature, faFileContract, faBook, faCircleXmark, faCircleCheck, faScrewdriverWrench, faCodeBranch } from '@fortawesome/free-solid-svg-icons';
-import { faJava, faJs, faGolang, faPhp, faPython, faRust } from '@fortawesome/free-brands-svg-icons';
+import { faClock, faPlusSquare, faTrash, faPenFancy, faCheckSquare, faFileSignature, faFileContract, faBook, faCircleXmark, faCircleCheck, faScrewdriverWrench, faCodeBranch, faKeyboard } from '@fortawesome/free-solid-svg-icons';
+import { faJava, faJs, faNodeJs, faGolang, faPhp, faPython, faRust, faSquareGithub } from '@fortawesome/free-brands-svg-icons';
 
 
 
@@ -101,6 +101,12 @@ const LanguageIcon = ({...props}) => {
         <FontAwesomeIcon icon={faJs} />
       </Icon>
     );
+  } else if (props.language === 'NodeJS') {
+    return (
+      <Icon>
+        <FontAwesomeIcon icon={faNodeJs} />
+      </Icon>
+    );
   } else if (props.language === 'PHP') {
     return (
       <Icon>
@@ -120,7 +126,11 @@ const LanguageIcon = ({...props}) => {
       </Icon>
     );
   } else {
-    return null;
+    return (
+      <Icon>
+        <FontAwesomeIcon icon={faKeyboard} />
+      </Icon>
+    );
   }
 };
 
@@ -136,7 +146,7 @@ const YesNo = ({...props}) => {
     );
   } else {
     return (
-      <li className="has-text-danger">
+      <li className="has-text-info">
         <Icon>
           <FontAwesomeIcon icon={faCircleXmark} />
         </Icon>
@@ -156,6 +166,29 @@ const MaintainerLink = ({...props}) => {
   }
 }
 
+const VisitRepo = ({...props}) => {
+  if (props.repo.startsWith('https://github.com/')) {
+    var disp = props.repo.replace('https://github.com/', '');
+    return (
+      <li>
+        <Icon>
+          <FontAwesomeIcon icon={faCodeBranch} />
+        </Icon>
+        <a href={props.repo}><Icon><FontAwesomeIcon icon={faSquareGithub}/></Icon>{disp}</a>
+      </li>
+    );
+  } else {
+    return (
+      <li>
+        <Icon>
+          <FontAwesomeIcon icon={faCodeBranch} />
+        </Icon>
+        <a href={props.repo}>{props.repo}</a>
+      </li>
+    );
+  }
+}
+
 const Libraries = ({...props}) => {
   const cards = libraryList.map(l => {
     return (
@@ -168,18 +201,15 @@ const Libraries = ({...props}) => {
       </li>
       <YesNo val={l.sign} label="Sign" />
       <YesNo val={l.verify} label="Verify" />
+      <YesNo val={l.request} label="Request" />
+      <YesNo val={l.response} label="Response" />
       <li>
         <Icon>
           <FontAwesomeIcon icon={faScrewdriverWrench} />
         </Icon>
         <b>Maintainer:</b> <MaintainerLink maintainer={l.maintainer} maintainerLink={l.maintainerLink} />
       </li>
-      <li>
-        <Icon>
-          <FontAwesomeIcon icon={faCodeBranch} />
-        </Icon>
-        <a href={l.repo}>Visit Resository</a>
-      </li>
+      <VisitRepo repo={l.repo} />
       </ul>
     </Card.Content>
     </Tile>
