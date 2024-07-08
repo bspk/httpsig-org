@@ -76,7 +76,7 @@ const libraryList = [
   },
   {
     language: '.NET',
-    maintainer: 'Roger K.',
+    maintainer: 'Unisys',
     maintainerLink: 'https://github.com/rogerk-unifysquare',
     repo: 'https://github.com/Unisys/NSign',
     request: true,
