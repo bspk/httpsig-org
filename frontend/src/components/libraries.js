@@ -74,6 +74,16 @@ const libraryList = [
     sign: true,
     verify: true
   },
+  {
+    language: '.NET',
+    maintainer: 'Roger K.',
+    maintainerLink: 'https://github.com/rogerk-unifysquare',
+    repo: 'https://github.com/Unisys/NSign',
+    request: true,
+    response: true,
+    sign: true,
+    verify: true
+  },
 ];
 
 export default libraryList;
