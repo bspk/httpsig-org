@@ -1,5 +1,5 @@
 const libraryList = [
-  {    
+  {
     language: 'Java',
     maintainer: 'Bespoke Engineering',
     maintainerLink: 'https://bspk.io/',
@@ -51,7 +51,7 @@ const libraryList = [
     maintainer: 'Jun Kurihara',
     repo: 'https://github.com/junkurihara/httpsig-rs',
     request: true,
-    response: false,
+    response: true,
     sign: true,
     verify: true
   },
@@ -79,6 +79,16 @@ const libraryList = [
     maintainer: 'Remitly',
     maintainerLink: 'https://www.remitly.com',
     repo: 'https://github.com/remitly-oss/httpsig-go',
+    request: true,
+    response: true,
+    sign: true,
+    verify: true
+  },
+  {
+    language: '.NET',
+    maintainer: 'Unisys',
+    maintainerLink: 'https://github.com/rogerk-unifysquare',
+    repo: 'https://github.com/Unisys/NSign',
     request: true,
     response: true,
     sign: true,
