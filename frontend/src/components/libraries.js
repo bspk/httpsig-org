@@ -1,5 +1,5 @@
 const libraryList = [
-  {    
+  {
     language: 'Java',
     maintainer: 'Bespoke Engineering',
     maintainerLink: 'https://bspk.io/',
@@ -51,7 +51,7 @@ const libraryList = [
     maintainer: 'Jun Kurihara',
     repo: 'https://github.com/junkurihara/httpsig-rs',
     request: true,
-    response: false,
+    response: true,
     sign: true,
     verify: true
   },
