@@ -75,6 +75,16 @@ const libraryList = [
     verify: true
   },
   {
+    language: 'Go',
+    maintainer: 'Remitly',
+    maintainerLink: 'https://www.remitly.com',
+    repo: 'https://github.com/remitly-oss/httpsig-go',
+    request: true,
+    response: true,
+    sign: true,
+    verify: true
+  },
+  {
     language: '.NET',
     maintainer: 'Unisys',
     maintainerLink: 'https://github.com/rogerk-unifysquare',
