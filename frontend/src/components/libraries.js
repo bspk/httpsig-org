@@ -94,6 +94,15 @@ const libraryList = [
     sign: true,
     verify: true
   },
+  {
+    language: 'Go',
+    maintainer: 'Common Fate',
+    repo: 'https://github.com/common-fate/httpsig',
+    request: true,
+    response: false,
+    sign: true,
+    verify: true
+  },
 ];
 
 export default libraryList;
