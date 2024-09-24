@@ -103,6 +103,16 @@ const libraryList = [
     sign: true,
     verify: true
   },
+  {
+    language: 'Java',
+    maintainer: 'Authlete',
+    maintainerLink: 'https://authlete.com/',
+    repo: 'https://github.com/authlete/http-message-signatures',
+    request: true,
+    response: true,
+    sign: true,
+    verify: true
+  },
 ];
 
 export default libraryList;
