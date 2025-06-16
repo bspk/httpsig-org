@@ -56,6 +56,15 @@ const libraryList = [
     verify: true
   },
   {
+    language: 'Rust',
+    maintainer: 'Cloudflare',
+    repo: 'https://github.com/cloudflare/web-bot-auth',
+    request: true,
+    response: false,
+    sign: true,
+    verify: true
+  },
+  {
     language: 'Ruby',
     maintainer: 'Miguel Landaeta',
     repo: 'https://github.com/nomadium/linzer',
@@ -71,6 +80,15 @@ const libraryList = [
     repo: 'https://github.com/misskey-dev/node-http-message-signatures',
     request: true,
     response: true,
+    sign: true,
+    verify: true
+  },
+  {
+    language: 'NodeJS',
+    maintainer: 'Cloudflare',
+    repo: 'https://github.com/cloudflare/web-bot-auth/tree/main/packages/http-message-sig',
+    request: true,
+    response: false,
     sign: true,
     verify: true
   },
