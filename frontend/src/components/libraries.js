@@ -74,6 +74,15 @@ const libraryList = [
     verify: true
   },
   {
+    language: 'Ruby',
+    maintainer: 'Joel Larsson',
+    repo: 'https://github.com/bolmaster2/http-signature',
+    request: true,
+    response: true,
+    sign: true,
+    verify: true
+  },
+  {
     language: 'NodeJS',
     maintainer: 'Misskey Project',
     maintainerLink: 'https://misskey-hub.net/en/',
