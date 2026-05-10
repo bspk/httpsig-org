@@ -11,7 +11,7 @@ import { faJava, faJs, faNodeJs, faGolang, faPhp, faPython, faRust, faSquareGith
 
 
 
-import { Button, ButtonGroup, Tabs, Container, Section, Level, Form, Columns, Content, Heading, Box, Icon, Tag, TagGroup, Hero, Tile, Card } from 'react-bulma-components';
+import { Button, ButtonGroup, Tabs, Container, Section, Level, Form, Columns, Content, Heading, Box, Icon, Tag, TagGroup, Hero, Tile, Card, Notification } from 'react-bulma-components';
 
 //const api = 'https://grb8qjtvye.execute-api.us-east-1.amazonaws.com/dev' // bspk test
 //const api = 'https://o52ky0nc31.execute-api.ca-central-1.amazonaws.com/dev' // secureKey install
@@ -1034,13 +1034,10 @@ MCowBQYDK2VwAyEAJrQLj5P/89iXES9+vFgrIy29clF9CC/oPPsw3c5D0bs=
       </Heading>
       
       {this.state.error && (
-        <Box id="input" color="danger">
-        <Hero color="danger">
-          <Hero.Header>Error</Hero.Header>
-          <Hero.Body>{this.state.error}</Hero.Body>
-          <Hero.Footer><Button onClick={this.clearError}>Close</Button></Hero.Footer>
-        </Hero>
-        </Box>
+        <Notification color="danger">
+          <button className="delete" aria-label="delete" onClick={this.clearError} />
+          <strong>Error:</strong> {this.state.error}
+        </Notification>
       )}
       {this.props.stage === 'input' && (
         <Box id="input">
