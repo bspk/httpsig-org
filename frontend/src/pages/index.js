@@ -394,7 +394,11 @@ Signature: sig=:SfHwLLMHetROs/nmZoKFbxwJhlgVt5pwWc0Ag7yuDfTxB1RaX8x\\
       if (response.ok) {
         return response.json();
       } else {
-        throw new Error(response.json()['error']);
+        return response.json().then(data => {
+          const message = data && data['error'] ? data['error'] : `HTTP ${response.status}`;
+          console.error('Backend error:', message);
+          throw new Error(message);
+        });
       }
     }).then(data => {
       var components = data['components'];
@@ -594,9 +598,13 @@ Signature: sig=:SfHwLLMHetROs/nmZoKFbxwJhlgVt5pwWc0Ag7yuDfTxB1RaX8x\\
       body: JSON.stringify(body)
     }).then(response => {
       if (response.ok) {
-        return response.json()
+        return response.json();
       } else {
-        throw new Error(response.json()['error']);
+        return response.json().then(data => {
+          const message = data && data['error'] ? data['error'] : `HTTP ${response.status}`;
+          console.error('Backend error:', message);
+          throw new Error(message);
+        });
       }
     }).then(data => {
       this.setState({
@@ -899,7 +907,11 @@ MCowBQYDK2VwAyEAJrQLj5P/89iXES9+vFgrIy29clF9CC/oPPsw3c5D0bs=
       if (response.ok) {
         return response.json();
       } else {
-        throw new Error(response.json()['error']);
+        return response.json().then(data => {
+          const message = data && data['error'] ? data['error'] : `HTTP ${response.status}`;
+          console.error('Backend error:', message);
+          throw new Error(message);
+        });
       }
     }).then(data => {
       this.setState({
@@ -960,7 +972,11 @@ MCowBQYDK2VwAyEAJrQLj5P/89iXES9+vFgrIy29clF9CC/oPPsw3c5D0bs=
       if (response.ok) {
         return response.json();
       } else {
-        throw new Error(response.json()['error']);
+        return response.json().then(data => {
+          const message = data && data['error'] ? data['error'] : `HTTP ${response.status}`;
+          console.error('Backend error:', message);
+          throw new Error(message);
+        });
       }
     }).then(data => {
       this.setState({
