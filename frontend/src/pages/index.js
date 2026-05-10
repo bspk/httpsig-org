@@ -639,12 +639,15 @@ Signature: sig=:SfHwLLMHetROs/nmZoKFbxwJhlgVt5pwWc0Ag7yuDfTxB1RaX8x\\
       var sigCovered = sig['coveredComponents'];
       // collect covered components
       var coveredComponents = [];
-      var avail = this.state.availableComponents;
+      var availCompos = this.state.availableComponents;
+      var missingCompos = [];//components covered by the signature but missing in the HTTP message
       sigCovered.forEach(c => {
-        console.log(avail);
-        console.log(c);
-        var comp = avail[c['id']].find(x => x['cid'] === c['cid']);
-        coveredComponents.push(comp);
+        var comp = availCompos[c['id']]?.find(x => x['cid'] === c['cid']);
+        if (comp) {
+          coveredComponents.push(comp);
+        } else {
+          missingCompos.push(c['cid'] || c['id']);
+        }
       });
       var alg = sig['params']['alg'];
       var created = sig['params']['created'];
@@ -658,7 +661,8 @@ Signature: sig=:SfHwLLMHetROs/nmZoKFbxwJhlgVt5pwWc0Ag7yuDfTxB1RaX8x\\
         expires: expires,
         keyid: keyid,
         existingSignature: sel,
-        verifySignature: sel
+        verifySignature: sel,
+        error: missingCompos.length ? `Signature "${sel}" covers components not present in the parsed message: ${missingCompos.join(', ')}.` : undefined
       });
     } else {
       this.setState({
