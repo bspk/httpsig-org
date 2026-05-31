@@ -11,7 +11,7 @@ import { faJava, faJs, faNodeJs, faGolang, faPhp, faPython, faRust, faSquareGith
 
 
 
-import { Button, ButtonGroup, Tabs, Container, Section, Level, Form, Columns, Content, Heading, Box, Icon, Tag, TagGroup, Hero, Tile, Card } from 'react-bulma-components';
+import { Button, ButtonGroup, Tabs, Container, Section, Level, Form, Columns, Content, Heading, Box, Icon, Tag, TagGroup, Hero, Tile, Card, Notification } from 'react-bulma-components';
 
 //const api = 'https://grb8qjtvye.execute-api.us-east-1.amazonaws.com/dev' // bspk test
 //const api = 'https://o52ky0nc31.execute-api.ca-central-1.amazonaws.com/dev' // secureKey install
@@ -394,7 +394,11 @@ Signature: sig=:SfHwLLMHetROs/nmZoKFbxwJhlgVt5pwWc0Ag7yuDfTxB1RaX8x\\
       if (response.ok) {
         return response.json();
       } else {
-        throw new Error(response.json()['error']);
+        return response.json().then(data => {
+          const message = data && data['error'] ? data['error'] : `HTTP ${response.status}`;
+          console.error('Backend error:', message);
+          throw new Error(message);
+        });
       }
     }).then(data => {
       var components = data['components'];
@@ -594,9 +598,13 @@ Signature: sig=:SfHwLLMHetROs/nmZoKFbxwJhlgVt5pwWc0Ag7yuDfTxB1RaX8x\\
       body: JSON.stringify(body)
     }).then(response => {
       if (response.ok) {
-        return response.json()
+        return response.json();
       } else {
-        throw new Error(response.json()['error']);
+        return response.json().then(data => {
+          const message = data && data['error'] ? data['error'] : `HTTP ${response.status}`;
+          console.error('Backend error:', message);
+          throw new Error(message);
+        });
       }
     }).then(data => {
       this.setState({
@@ -631,12 +639,15 @@ Signature: sig=:SfHwLLMHetROs/nmZoKFbxwJhlgVt5pwWc0Ag7yuDfTxB1RaX8x\\
       var sigCovered = sig['coveredComponents'];
       // collect covered components
       var coveredComponents = [];
-      var avail = this.state.availableComponents;
+      var availCompos = this.state.availableComponents;
+      var missingCompos = [];//components covered by the signature but missing in the HTTP message
       sigCovered.forEach(c => {
-        console.log(avail);
-        console.log(c);
-        var comp = avail[c['id']].find(x => x['cid'] === c['cid']);
-        coveredComponents.push(comp);
+        var comp = availCompos[c['id']]?.find(x => x['cid'] === c['cid']);
+        if (comp) {
+          coveredComponents.push(comp);
+        } else {
+          missingCompos.push(c['cid'] || c['id']);
+        }
       });
       var alg = sig['params']['alg'];
       var created = sig['params']['created'];
@@ -650,7 +661,8 @@ Signature: sig=:SfHwLLMHetROs/nmZoKFbxwJhlgVt5pwWc0Ag7yuDfTxB1RaX8x\\
         expires: expires,
         keyid: keyid,
         existingSignature: sel,
-        verifySignature: sel
+        verifySignature: sel,
+        error: missingCompos.length ? `Signature "${sel}" covers components not present in the parsed message: ${missingCompos.join(', ')}.` : undefined
       });
     } else {
       this.setState({
@@ -899,7 +911,11 @@ MCowBQYDK2VwAyEAJrQLj5P/89iXES9+vFgrIy29clF9CC/oPPsw3c5D0bs=
       if (response.ok) {
         return response.json();
       } else {
-        throw new Error(response.json()['error']);
+        return response.json().then(data => {
+          const message = data && data['error'] ? data['error'] : `HTTP ${response.status}`;
+          console.error('Backend error:', message);
+          throw new Error(message);
+        });
       }
     }).then(data => {
       this.setState({
@@ -960,7 +976,11 @@ MCowBQYDK2VwAyEAJrQLj5P/89iXES9+vFgrIy29clF9CC/oPPsw3c5D0bs=
       if (response.ok) {
         return response.json();
       } else {
-        throw new Error(response.json()['error']);
+        return response.json().then(data => {
+          const message = data && data['error'] ? data['error'] : `HTTP ${response.status}`;
+          console.error('Backend error:', message);
+          throw new Error(message);
+        });
       }
     }).then(data => {
       this.setState({
@@ -1018,13 +1038,10 @@ MCowBQYDK2VwAyEAJrQLj5P/89iXES9+vFgrIy29clF9CC/oPPsw3c5D0bs=
       </Heading>
       
       {this.state.error && (
-        <Box id="input" color="danger">
-        <Hero color="danger">
-          <Hero.Header>Error</Hero.Header>
-          <Hero.Body>{this.state.error}</Hero.Body>
-          <Hero.Footer><Button onClick={this.clearError}>Close</Button></Hero.Footer>
-        </Hero>
-        </Box>
+        <Notification color="danger">
+          <button className="delete" aria-label="delete" onClick={this.clearError} />
+          <strong>Error:</strong> {this.state.error}
+        </Notification>
       )}
       {this.props.stage === 'input' && (
         <Box id="input">

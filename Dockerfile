@@ -1,6 +1,6 @@
 # syntax = docker/dockerfile:1.3
 
-FROM --platform=$BUILDPLATFORM node:18.16.0-alpine3.17 AS frontend-builder
+FROM --platform=$BUILDPLATFORM node:18.20.8-alpine3.21 AS frontend-builder
 #ENV NODE_OPTIONS=--openssl-legacy-provider
 RUN apk add autoconf automake libtool make tiff jpeg zlib zlib-dev pkgconf nasm file gcc musl-dev util-linux && yarn global add gatsby-cli && gatsby telemetry --disable
 WORKDIR /build
@@ -9,6 +9,7 @@ RUN npx browserslist@latest --update-db && yarn
 COPY frontend/. ./
 RUN yarn build
 
+#FROM alpine:3.23 AS backend
 FROM alpine:3.17 AS backend
 ENV PYTHONUNBUFFERED=1
 RUN apk add python3 py3-pip python3-dev gcc musl-dev libffi-dev make
