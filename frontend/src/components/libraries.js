@@ -140,6 +140,16 @@ const libraryList = [
     sign: true,
     verify: true
   },
+  {
+    language: 'PHP',
+    maintainer: 'Mike Macgirvin',
+    maintainerLink: 'https://macgirvin.com/',
+    repo: 'https://github.com/macgirvin/HTTP-Message-Signer',
+    request: true,
+    response: true,
+    sign: true,
+    verify: true
+  },
 ];
 
 export default libraryList;
